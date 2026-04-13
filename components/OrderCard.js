@@ -104,8 +104,8 @@ const ActionButton = styled.button`
   padding: 6px 12px;
   border: none;
   border-radius: 8px;
-  background: ${(p) => (p.$highlight ? 'white' : '#3182f6')};
-  color: ${(p) => (p.$highlight ? '#3182f6' : 'white')};
+  background: ${(p) => (p.$highlight ? 'white' : '#3182F6')};
+  color: ${(p) => (p.$highlight ? '#3182F6' : 'white')};
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;

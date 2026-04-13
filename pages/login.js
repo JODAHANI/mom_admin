@@ -19,6 +19,12 @@ const Card = styled.div`
   border-radius: 16px;
   padding: 40px 32px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  margin: 0 16px;
+
+  @media (max-width: 480px) {
+    padding: 32px 20px;
+    border-radius: 12px;
+  }
 `;
 
 const Title = styled.h1`
@@ -135,7 +141,7 @@ export default function LoginPage() {
       showToast('로그인 되었습니다', 'auth', { position: 'center-bottom' });
       router.push('/products');
     } catch (err) {
-      setError('이메일 또는 비밀번호가 올바르지 않습니다');
+      setError('아이디 또는 비밀번호가 올바르지 않습니다');
     } finally {
       setLoading(false);
     }
@@ -147,12 +153,12 @@ export default function LoginPage() {
         <Title>테이블 홈 관리자</Title>
         <form onSubmit={handleSubmit}>
           <FieldGroup>
-            <Label>이메일</Label>
+            <Label>아이디</Label>
             <Input
-              type="email"
+              type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="이메일을 입력하세요"
+              placeholder="아이디를 입력하세요"
               required
             />
           </FieldGroup>

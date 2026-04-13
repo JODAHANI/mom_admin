@@ -15,10 +15,18 @@ const MainArea = styled.div`
   margin-left: 240px;
   padding-top: 60px;
   flex: 1;
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+  }
 `;
 
 const Content = styled.div`
   padding: 24px;
+
+  @media (max-width: 480px) {
+    padding: 16px;
+  }
 `;
 
 const PageTitle = styled.h2`
@@ -46,7 +54,7 @@ const Tab = styled.button`
   transition: all 0.15s;
 
   &:hover {
-    border-color: #3182f6;
+    border-color: #3182F6;
   }
 `;
 

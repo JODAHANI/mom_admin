@@ -21,10 +21,18 @@ const MainArea = styled.div`
   padding-top: 60px;
   flex: 1;
   min-height: 100vh;
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+  }
 `;
 
 const Content = styled.div`
   padding: 24px;
+
+  @media (max-width: 480px) {
+    padding: 16px;
+  }
 `;
 
 const TopBar = styled.div`
@@ -32,11 +40,17 @@ const TopBar = styled.div`
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
+  gap: 12px;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
 `;
 
 const SearchInput = styled.input`
   padding: 10px 14px;
-  border: 1px solid #e5e8eb;
+  border: 1px solid #E5E8EB;
   border-radius: 8px;
   font-size: 14px;
   width: 300px;
@@ -44,13 +58,17 @@ const SearchInput = styled.input`
   background: white;
 
   &:focus {
-    border-color: #3182f6;
+    border-color: #3182F6;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
   }
 `;
 
 const AddButton = styled.button`
   padding: 10px 20px;
-  background: #3182f6;
+  background: #3182F6;
   color: white;
   border: none;
   border-radius: 8px;
@@ -81,7 +99,7 @@ const Tab = styled.button`
   transition: all 0.15s;
 
   &:hover {
-    border-color: #3182f6;
+    border-color: #3182F6;
   }
 `;
 

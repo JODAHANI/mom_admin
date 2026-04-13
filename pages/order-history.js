@@ -32,17 +32,25 @@ const MainArea = styled.div`
   margin-left: 240px;
   padding-top: 60px;
   flex: 1;
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+  }
 `;
 
 const Content = styled.div`
   padding: 24px;
+
+  @media (max-width: 480px) {
+    padding: 16px;
+  }
 `;
 
 const PageTitle = styled.h2`
   font-size: 20px;
   font-weight: 700;
   margin-bottom: 20px;
-  color: #1b1d1f;
+  color: #191f28;
 `;
 
 /* 요약 카드 */
@@ -51,6 +59,15 @@ const StatsRow = styled.div`
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin-bottom: 24px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const StatCard = styled.div`
@@ -58,6 +75,10 @@ const StatCard = styled.div`
   border-radius: 12px;
   padding: 20px;
   border-left: 12px solid ${(p) => p.$color || '#3182F6'};
+
+  @media (max-width: 480px) {
+    padding: 14px;
+  }
 `;
 
 const StatLabel = styled.div`
@@ -70,6 +91,10 @@ const StatValue = styled.div`
   font-size: 24px;
   font-weight: 700;
   color: #191f28;
+
+  @media (max-width: 480px) {
+    font-size: 20px;
+  }
 `;
 
 /* 필터 */
@@ -105,7 +130,7 @@ const FilterInput = styled.input`
   outline: none;
 
   &:focus {
-    border-color: #3182f6;
+    border-color: #3182F6;
   }
 `;
 
@@ -119,7 +144,7 @@ const FilterSelect = styled.select`
   outline: none;
 
   &:focus {
-    border-color: #3182f6;
+    border-color: #3182F6;
   }
 `;
 
@@ -140,17 +165,29 @@ const QuickBtn = styled.button`
   transition: all 0.15s;
 
   &:hover {
-    border-color: #3182f6;
+    border-color: #3182F6;
   }
 `;
 
 /* 테이블 */
+const TableWrapper = styled.div`
+  @media (max-width: 768px) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 12px;
+  }
+`;
+
 const Table = styled.table`
   width: 100%;
   background: white;
   border-radius: 12px;
   overflow: hidden;
   border-collapse: collapse;
+
+  @media (max-width: 768px) {
+    min-width: 700px;
+  }
 `;
 
 const Th = styled.th`
@@ -177,7 +214,7 @@ const StatusBadge = styled.span`
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
-  background: ${(p) => statusColors[p.$status]?.bg || '#E5E8EB'};
+  background: ${(p) => statusColors[p.$status]?.bg || '#e5e8eb'};
   color: ${(p) => statusColors[p.$status]?.text || '#333'};
 `;
 
@@ -210,7 +247,7 @@ const PageBtn = styled.button`
   transition: all 0.15s;
 
   &:hover:not(:disabled) {
-    border-color: #3182f6;
+    border-color: #3182F6;
   }
 
   &:disabled {
@@ -381,6 +418,7 @@ export default function OrderHistoryPage() {
           </FilterSection>
 
           {/* 주문 테이블 */}
+          <TableWrapper>
           <Table>
             <thead>
               <tr>
@@ -430,6 +468,7 @@ export default function OrderHistoryPage() {
               )}
             </tbody>
           </Table>
+          </TableWrapper>
 
           {/* 페이지네이션 */}
           {totalPages > 1 && (

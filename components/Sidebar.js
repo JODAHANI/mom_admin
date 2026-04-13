@@ -1,7 +1,21 @@
 import styled from 'styled-components';
 import { useRouter } from 'next/router';
+import { useAtom } from 'jotai';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from './Toast';
+import { sidebarOpenAtom } from '../store/atoms';
+
+const Overlay = styled.div`
+  display: none;
+
+  @media (max-width: 768px) {
+    display: ${(p) => (p.$open ? 'block' : 'none')};
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 100;
+  }
+`;
 
 const SidebarContainer = styled.aside`
   width: 240px;
@@ -14,6 +28,11 @@ const SidebarContainer = styled.aside`
   z-index: 101;
   display: flex;
   flex-direction: column;
+  transition: transform 0.25s ease;
+
+  @media (max-width: 768px) {
+    transform: translateX(${(p) => (p.$open ? '0' : '-100%')});
+  }
 `;
 
 const Logo = styled.div`
@@ -56,7 +75,7 @@ const Divider = styled.div`
 
 const LowerItem = styled.div`
   padding: 10px 20px;
-  color: #8b95a1;
+  color: #8B95A1;
   cursor: pointer;
   font-size: 13px;
   transition: color 0.15s;
@@ -73,37 +92,46 @@ const menuItems = [
   { label: '테이블 현황', key: 'tables', href: '/tables' },
   { label: '카테고리', key: 'categories', href: '/categories' },
   { label: '공지사항', key: 'notices', href: '/notices' },
+  { label: '계정 관리', key: 'admins', href: '/admins' },
 ];
-
-const lowerItems = ['상품 편집', '상품 한번에 등록', '의견 보내기'];
 
 export default function Sidebar({ active = 'products' }) {
   const router = useRouter();
   const { logout } = useAuth({ redirectIfUnauthenticated: false });
   const showToast = useToast();
+  const [sidebarOpen, setSidebarOpen] = useAtom(sidebarOpenAtom);
 
   const handleLogout = () => {
     showToast('로그아웃 되었습니다', 'auth', { position: 'center-bottom' });
+    setSidebarOpen(false);
     logout();
   };
 
+  const handleNavigate = (href) => {
+    setSidebarOpen(false);
+    router.push(href);
+  };
+
   return (
-    <SidebarContainer>
-      <Logo>테이블 홈</Logo>
-      <MenuSection>
-        {menuItems.map((item) => (
-          <MenuItem
-            key={item.key}
-            $active={active === item.key}
-            onClick={() => router.push(item.href)}
-          >
-            {item.label}
-          </MenuItem>
-        ))}
-      </MenuSection>
-      <Divider />
-      <LowerItem onClick={handleLogout}>로그아웃</LowerItem>
-      <div style={{ height: 20 }} />
-    </SidebarContainer>
+    <>
+      <Overlay $open={sidebarOpen} onClick={() => setSidebarOpen(false)} />
+      <SidebarContainer $open={sidebarOpen}>
+        <Logo>테이블 홈</Logo>
+        <MenuSection>
+          {menuItems.map((item) => (
+            <MenuItem
+              key={item.key}
+              $active={active === item.key}
+              onClick={() => handleNavigate(item.href)}
+            >
+              {item.label}
+            </MenuItem>
+          ))}
+        </MenuSection>
+        <Divider />
+        <LowerItem onClick={handleLogout}>로그아웃</LowerItem>
+        <div style={{ height: 20 }} />
+      </SidebarContainer>
+    </>
   );
 }

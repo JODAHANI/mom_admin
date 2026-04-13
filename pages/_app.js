@@ -53,6 +53,12 @@ const GlobalStyle = createGlobalStyle`
   input, textarea, select {
     font-family: inherit;
   }
+
+  @media (max-width: 768px) {
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
+  }
 `;
 
 function WebSocketProvider({ children }) {

@@ -97,6 +97,7 @@ const UploadingText = styled.span`
 const BadgeGroup = styled.div`
   display: flex;
   gap: 16px;
+  flex-wrap: wrap;
 `;
 
 const BadgeLabel = styled.label`

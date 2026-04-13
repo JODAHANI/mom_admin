@@ -5,3 +5,4 @@ export const notificationsAtom = atom([]);
 export const sidebarActiveAtom = atom('products');
 export const searchQueryAtom = atom('');
 export const highlightOrderAtom = atom(null);
+export const sidebarOpenAtom = atom(false);

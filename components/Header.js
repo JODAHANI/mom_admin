@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { useAtom, useAtomValue } from 'jotai';
-import { kioskModeAtom, notificationsAtom } from '../store/atoms';
+import { kioskModeAtom, notificationsAtom, sidebarOpenAtom } from '../store/atoms';
 import Toggle from './Toggle';
 
 const HeaderBar = styled.header`
@@ -17,18 +17,53 @@ const HeaderBar = styled.header`
   left: 240px;
   right: 0;
   z-index: 100;
+
+  @media (max-width: 768px) {
+    left: 0;
+    padding: 0 12px;
+  }
 `;
 
 const Left = styled.div`
   font-size: 20px;
   font-weight: 700;
   color: #1b1d1f;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
+const HamburgerBtn = styled.button`
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  font-size: 22px;
+  color: #1b1d1f;
+  line-height: 1;
+
+  @media (max-width: 768px) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+`;
+
+const TitleText = styled.span`
+  @media (max-width: 480px) {
+    font-size: 16px;
+  }
 `;
 
 const Center = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+
+  @media (max-width: 480px) {
+    display: none;
+  }
 `;
 
 const KioskLabel = styled.span`
@@ -85,6 +120,11 @@ const Dropdown = styled.div`
   overflow: hidden;
   animation: ${slideDown} 0.15s ease;
   z-index: 200;
+
+  @media (max-width: 480px) {
+    width: calc(100vw - 24px);
+    right: -12px;
+  }
 `;
 
 const DropdownHeader = styled.div`
@@ -98,7 +138,7 @@ const DropdownHeader = styled.div`
 const DropdownTitle = styled.span`
   font-size: 15px;
   font-weight: 700;
-  color: #191f28;
+  color: #1b1d1f;
 `;
 
 const ClearButton = styled.button`
@@ -151,7 +191,7 @@ const NotiContent = styled.div`
 
 const NotiMessage = styled.div`
   font-size: 14px;
-  color: #191f28;
+  color: #1b1d1f;
   line-height: 1.4;
 `;
 
@@ -184,6 +224,7 @@ function formatTime(date) {
 export default function Header() {
   const [kioskMode, setKioskMode] = useAtom(kioskModeAtom);
   const [notifications, setNotifications] = useAtom(notificationsAtom);
+  const [sidebarOpen, setSidebarOpen] = useAtom(sidebarOpenAtom);
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -210,7 +251,12 @@ export default function Header() {
 
   return (
     <HeaderBar>
-      <Left>테이블 홈</Left>
+      <Left>
+        <HamburgerBtn onClick={() => setSidebarOpen(!sidebarOpen)}>
+          &#9776;
+        </HamburgerBtn>
+        <TitleText>테이블 홈</TitleText>
+      </Left>
       <Center>
         <KioskLabel>키오스크 모드</KioskLabel>
         <Toggle checked={kioskMode} onChange={setKioskMode} size="sm" />

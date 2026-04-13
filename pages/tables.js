@@ -11,7 +11,7 @@ const statusColors = {
   accepted: { bg: '#3182F6', text: 'white' },
   preparing: { bg: '#FF9800', text: 'white' },
   ready: { bg: '#4CAF50', text: 'white' },
-  served: { bg: '#E5E8EB', text: '#8B95A1' },
+  served: { bg: '#E5E8EB', text: '#8b95a1' },
   cancelled: { bg: '#FFF0F0', text: '#FF3B30' },
 };
 
@@ -37,10 +37,18 @@ const MainArea = styled.div`
   margin-left: 240px;
   padding-top: 60px;
   flex: 1;
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+  }
 `;
 
 const Content = styled.div`
   padding: 24px;
+
+  @media (max-width: 480px) {
+    padding: 16px;
+  }
 `;
 
 const TitleRow = styled.div`
@@ -48,12 +56,22 @@ const TitleRow = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  gap: 12px;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
 `;
 
 const PageTitle = styled.h2`
   font-size: 20px;
   font-weight: 700;
-  color: #1b1d1f;
+  color: #191f28;
+
+  @media (max-width: 480px) {
+    font-size: 17px;
+  }
 `;
 
 const AddBtn = styled.button`
@@ -93,26 +111,26 @@ const FieldLabel = styled.label`
 
 const FieldInput = styled.input`
   padding: 10px 12px;
-  border: 1px solid #e5e8eb;
+  border: 1px solid #E5E8EB;
   border-radius: 8px;
   font-size: 15px;
   outline: none;
 
   &:focus {
-    border-color: #3182f6;
+    border-color: #3182F6;
   }
 `;
 
 const FieldSelect = styled.select`
   padding: 10px 12px;
-  border: 1px solid #e5e8eb;
+  border: 1px solid #E5E8EB;
   border-radius: 8px;
   font-size: 15px;
   background: white;
   outline: none;
 
   &:focus {
-    border-color: #3182f6;
+    border-color: #3182F6;
   }
 `;
 
@@ -154,7 +172,7 @@ const Tab = styled.button`
   transition: all 0.15s;
 
   &:hover {
-    border-color: #3182f6;
+    border-color: #3182F6;
   }
 `;
 
@@ -163,6 +181,7 @@ const Legend = styled.div`
   display: flex;
   gap: 20px;
   margin-bottom: 24px;
+  flex-wrap: wrap;
 `;
 
 const LegendItem = styled.div`
@@ -191,13 +210,18 @@ const FloorTitle = styled.h3`
   color: #191f28;
   margin-bottom: 14px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #e5e8eb;
+  border-bottom: 1px solid #E5E8EB;
 `;
 
 const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 16px;
+
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+  }
 `;
 
 const pulse = keyframes`
@@ -298,6 +322,7 @@ const Modal = styled.div`
   background: white;
   border-radius: 16px;
   width: 480px;
+  max-width: calc(100vw - 32px);
   max-height: 80vh;
   overflow-y: auto;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
@@ -305,7 +330,7 @@ const Modal = styled.div`
 
 const ModalHeader = styled.div`
   padding: 20px 24px;
-  border-bottom: 1px solid #e5e8eb;
+  border-bottom: 1px solid #E5E8EB;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -408,7 +433,7 @@ const EmptyOrders = styled.div`
 
 const ModalFooter = styled.div`
   padding: 16px 24px;
-  border-top: 1px solid #e5e8eb;
+  border-top: 1px solid #E5E8EB;
   display: flex;
   gap: 8px;
 `;
@@ -557,7 +582,7 @@ const QrPrintCard = styled.div`
 
   @media print {
     page-break-inside: avoid;
-    border: 1px solid #e5e8eb;
+    border: 1px solid #E5E8EB;
     border-radius: 12px;
     padding: 24px;
   }
@@ -744,6 +769,7 @@ export default function TablesPage() {
                 <ModalHeader>
                   <ModalTitle>
                     {selectedTable.floor}층 {selectedTable.number}번 테이블
+                    <span style={{ fontSize: 13, color: '#3182F6', fontWeight: 600, cursor: 'pointer', marginLeft: 12 }} onClick={() => { setSelectedTable(null); setQrTable(selectedTable); }}>QR코드</span>
                   </ModalTitle>
                   <CloseBtn onClick={() => setSelectedTable(null)}>&times;</CloseBtn>
                 </ModalHeader>
@@ -807,7 +833,6 @@ export default function TablesPage() {
                 </ModalBody>
                 <ModalFooter>
                   <DeleteBtn onClick={handleDeleteTable}>삭제</DeleteBtn>
-                  <QrBtn onClick={() => { setSelectedTable(null); setQrTable(selectedTable); }}>QR코드</QrBtn>
                   {(selectedTable.allOrders?.length > 0 || selectedTable.activeOrders?.length > 0) && (
                     <ClearBtn onClick={handleClearTable} disabled={updateTable.isPending}>
                       테이블 비우기
@@ -820,7 +845,7 @@ export default function TablesPage() {
           {/* 테이블 추가 모달 */}
           {showAddModal && (
             <Overlay onClick={() => setShowAddModal(false)}>
-              <Modal onClick={(e) => e.stopPropagation()} style={{ width: 360 }}>
+              <Modal onClick={(e) => e.stopPropagation()} style={{ width: 360, maxWidth: 'calc(100vw - 32px)' }}>
                 <ModalHeader>
                   <ModalTitle>테이블 추가</ModalTitle>
                   <CloseBtn onClick={() => setShowAddModal(false)}>&times;</CloseBtn>
@@ -854,7 +879,7 @@ export default function TablesPage() {
           {/* 개별 QR코드 모달 */}
           {qrTable && (
             <Overlay onClick={() => setQrTable(null)}>
-              <Modal onClick={(e) => e.stopPropagation()} style={{ width: 400 }}>
+              <Modal onClick={(e) => e.stopPropagation()} style={{ width: 400, maxWidth: 'calc(100vw - 32px)' }}>
                 <ModalHeader>
                   <ModalTitle>QR코드</ModalTitle>
                   <CloseBtn onClick={() => setQrTable(null)}>&times;</CloseBtn>
@@ -874,7 +899,7 @@ export default function TablesPage() {
           {/* QR코드 전체/개별 인쇄 모달 */}
           {showQrAll && (
             <Overlay onClick={() => setShowQrAll(false)}>
-              <Modal onClick={(e) => e.stopPropagation()} style={{ width: 600, maxHeight: '90vh' }}>
+              <Modal onClick={(e) => e.stopPropagation()} style={{ width: 600, maxWidth: 'calc(100vw - 32px)', maxHeight: '90vh' }}>
                 <ModalHeader>
                   <ModalTitle>
                     {showQrAll._id ? `${showQrAll.floor}층 ${showQrAll.number}번 QR 인쇄` : 'QR코드 전체 출력'}

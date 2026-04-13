@@ -129,7 +129,7 @@ const CancelButton = styled.button`
   color: #333;
 
   &:hover {
-    background: #f5f6f8;
+    background: #F5F6F8;
   }
 `;
 
@@ -148,7 +148,7 @@ const ArrowButton = styled.button`
   margin-left: 4px;
 
   &:hover {
-    background: #f5f6f8;
+    background: #F5F6F8;
     color: #333;
   }
 
@@ -287,7 +287,7 @@ export default function CategoryList() {
         })}
         {categoriesList.length === 0 && (
           <Item>
-            <Name style={{ color: '#8B95A1', textAlign: 'center' }}>
+            <Name style={{ color: '#8b95a1', textAlign: 'center' }}>
               카테고리가 없습니다
             </Name>
           </Item>
