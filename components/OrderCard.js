@@ -40,6 +40,21 @@ const flash = keyframes`
   100% { background: white; }
 `;
 
+const spin = keyframes`
+  to { transform: rotate(360deg); }
+`;
+
+const Spinner = styled.span`
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid ${(p) => p.$color || 'rgba(255,255,255,0.4)'};
+  border-top-color: ${(p) => p.$topColor || 'white'};
+  border-radius: 50%;
+  animation: ${spin} 0.7s linear infinite;
+  vertical-align: middle;
+`;
+
 const Card = styled.div`
   background: ${(p) => (p.$highlight ? '#3182F6' : 'white')};
   border-radius: 12px;
@@ -110,9 +125,15 @@ const ActionButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.5s ease;
+  min-width: 72px;
 
   &:hover {
     opacity: 0.85;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.8;
   }
 `;
 
@@ -125,10 +146,16 @@ const CancelButton = styled.button`
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  min-width: 52px;
 
   &:hover {
     background: #FFF5F5;
     border-color: #F44336;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.8;
   }
 `;
 
@@ -230,12 +257,20 @@ export default function OrderCard({ order }) {
         <RightGroup>
           {status !== 'served' && status !== 'cancelled' && (
             <CancelButton onClick={handleCancel} disabled={updateStatus.isPending}>
-              취소
+              {updateStatus.isPending ? (
+                <Spinner $color="rgba(244,67,54,0.25)" $topColor="#F44336" />
+              ) : (
+                '취소'
+              )}
             </CancelButton>
           )}
           {next && (
             <ActionButton $highlight={highlight} onClick={handleAdvance} disabled={updateStatus.isPending}>
-              {nextStatusLabel[status]}
+              {updateStatus.isPending ? (
+                <Spinner $color="rgba(255,255,255,0.35)" $topColor="white" />
+              ) : (
+                nextStatusLabel[status]
+              )}
             </ActionButton>
           )}
         </RightGroup>
