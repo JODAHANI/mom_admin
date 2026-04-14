@@ -2,7 +2,8 @@ import { useState } from 'react';
 import styled from 'styled-components';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
-import { useOrderHistory, useOrderStats } from '../hooks/useOrderHistory';
+import SalesCalendar from '../components/SalesCalendar';
+import { useOrderHistory, useOrderStats, useMonthlySales } from '../hooks/useOrderHistory';
 import { useAuth } from '../hooks/useAuth';
 
 const statusColors = {
@@ -46,11 +47,47 @@ const Content = styled.div`
   }
 `;
 
+const PageHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
 const PageTitle = styled.h2`
   font-size: 20px;
   font-weight: 700;
-  margin-bottom: 20px;
   color: #191f28;
+  margin: 0;
+`;
+
+const ViewToggle = styled.div`
+  display: inline-flex;
+  border: 1px solid #e5e8eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+`;
+
+const ViewBtn = styled.button`
+  padding: 8px 16px;
+  border: none;
+  background: ${(p) => (p.$active ? '#3182F6' : 'white')};
+  color: ${(p) => (p.$active ? 'white' : '#333')};
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  & + & {
+    border-left: 1px solid #e5e8eb;
+  }
+
+  &:hover:not(:disabled) {
+    background: ${(p) => (p.$active ? '#3182F6' : '#f8f9fa')};
+  }
 `;
 
 /* 요약 카드 */
@@ -63,10 +100,6 @@ const StatsRow = styled.div`
   @media (max-width: 768px) {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
-  }
-
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr;
   }
 `;
 
@@ -94,6 +127,19 @@ const StatValue = styled.div`
 
   @media (max-width: 480px) {
     font-size: 20px;
+  }
+`;
+
+const DesktopOnly = styled.span`
+  @media (max-width: 480px) {
+    display: none;
+  }
+`;
+
+const MobileOnly = styled.span`
+  display: none;
+  @media (max-width: 480px) {
+    display: inline;
   }
 `;
 
@@ -166,6 +212,26 @@ const QuickBtn = styled.button`
 
   &:hover {
     border-color: #3182F6;
+  }
+`;
+
+/* 테이블 헤더 바 */
+const TableBar = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
+const TotalCount = styled.div`
+  font-size: 13px;
+  color: #8b95a1;
+
+  strong {
+    color: #191f28;
+    font-weight: 700;
   }
 `;
 
@@ -275,6 +341,23 @@ function getMonthStart() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
 }
 
+function formatCompactWon(won) {
+  const n = Number(won || 0);
+  if (n >= 100000000) return `${(n / 100000000).toFixed(1)}억원`;
+  if (n >= 10000) return `${(n / 10000).toFixed(n >= 100000 ? 0 : 1)}만원`;
+  return `${n.toLocaleString()}원`;
+}
+
+function Money({ value }) {
+  const n = Number(value || 0);
+  return (
+    <>
+      <DesktopOnly>{n.toLocaleString()}원</DesktopOnly>
+      <MobileOnly>{formatCompactWon(n)}</MobileOnly>
+    </>
+  );
+}
+
 function formatDateTime(str) {
   if (!str) return '';
   const d = new Date(str);
@@ -288,6 +371,13 @@ function formatDateTime(str) {
 export default function OrderHistoryPage() {
   const { loading } = useAuth();
   const today = getToday();
+  const now = new Date();
+
+  const [viewMode, setViewMode] = useState('list');
+  const [calMonth, setCalMonth] = useState({
+    year: now.getFullYear(),
+    month: now.getMonth() + 1,
+  });
 
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
@@ -300,9 +390,42 @@ export default function OrderHistoryPage() {
 
   const { data, isLoading } = useOrderHistory({
     startDate, endDate, status, tableNumber, search, page, limit,
-  });
+  }, { enabled: viewMode === 'list' });
 
-  const { data: stats } = useOrderStats(startDate, endDate);
+  const { data: stats } = useOrderStats(startDate, endDate, { enabled: viewMode === 'list' });
+
+  const { data: monthly, isLoading: monthlyLoading } = useMonthlySales(
+    calMonth.year,
+    calMonth.month,
+    { enabled: viewMode === 'calendar' },
+  );
+
+  const goPrevMonth = () => {
+    setCalMonth((c) => {
+      const m = c.month - 1;
+      return m < 1 ? { year: c.year - 1, month: 12 } : { year: c.year, month: m };
+    });
+  };
+  const goNextMonth = () => {
+    setCalMonth((c) => {
+      const m = c.month + 1;
+      return m > 12 ? { year: c.year + 1, month: 1 } : { year: c.year, month: m };
+    });
+  };
+  const goToday = () => {
+    const d = new Date();
+    setCalMonth({ year: d.getFullYear(), month: d.getMonth() + 1 });
+  };
+  const handleDayClick = (dateKey) => {
+    setStartDate(dateKey);
+    setEndDate(dateKey);
+    setStatus('all');
+    setTableNumber('');
+    setSearch('');
+    setPage(1);
+    setQuickRange('');
+    setViewMode('list');
+  };
 
   const orders = data?.orders || [];
   const total = data?.total || 0;
@@ -332,14 +455,65 @@ export default function OrderHistoryPage() {
 
   if (loading) return null;
 
+  const renderViewToggle = () => (
+    <ViewToggle>
+      <ViewBtn $active={viewMode === 'list'} onClick={() => setViewMode('list')}>리스트</ViewBtn>
+      <ViewBtn $active={viewMode === 'calendar'} onClick={() => setViewMode('calendar')}>매출달력</ViewBtn>
+    </ViewToggle>
+  );
+
   return (
     <PageContainer>
       <Sidebar active="order-history" />
       <MainArea>
         <Header />
         <Content>
-          <PageTitle>주문내역</PageTitle>
+          <PageHeader>
+            <PageTitle>주문내역</PageTitle>
+            {viewMode === 'calendar' && renderViewToggle()}
+          </PageHeader>
 
+          {viewMode === 'calendar' ? (
+            <>
+              <StatsRow>
+                <StatCard $color="#3182F6">
+                  <StatLabel>이 달 주문수</StatLabel>
+                  <StatValue>{monthly?.totalCount?.toLocaleString() || 0}건</StatValue>
+                </StatCard>
+                <StatCard $color="#4CAF50">
+                  <StatLabel>이 달 매출</StatLabel>
+                  <StatValue><Money value={monthly?.totalRevenue} /></StatValue>
+                </StatCard>
+                <StatCard $color="#FF9800">
+                  <StatLabel>일 평균 매출</StatLabel>
+                  <StatValue><Money value={monthly?.avgDaily} /></StatValue>
+                </StatCard>
+                <StatCard $color="#9C27B0">
+                  <StatLabel>최고 매출일</StatLabel>
+                  <StatValue>
+                    {monthly?.bestDay ? (
+                      <>
+                        {Number(monthly.bestDay.date.slice(8, 10))}일 · <Money value={monthly.bestDay.revenue} />
+                      </>
+                    ) : '-'}
+                  </StatValue>
+                </StatCard>
+              </StatsRow>
+
+              <SalesCalendar
+                year={calMonth.year}
+                month={calMonth.month}
+                data={monthly}
+                todayKey={today}
+                loading={monthlyLoading}
+                onPrev={goPrevMonth}
+                onNext={goNextMonth}
+                onToday={goToday}
+                onDayClick={handleDayClick}
+              />
+            </>
+          ) : (
+            <>
           {/* 요약 카드 */}
           <StatsRow>
             <StatCard $color="#3182F6">
@@ -348,7 +522,7 @@ export default function OrderHistoryPage() {
             </StatCard>
             <StatCard $color="#4CAF50">
               <StatLabel>총 매출</StatLabel>
-              <StatValue>{stats?.totalRevenue?.toLocaleString() || 0}원</StatValue>
+              <StatValue><Money value={stats?.totalRevenue} /></StatValue>
             </StatCard>
             <StatCard $color="#F44336">
               <StatLabel>취소 건수</StatLabel>
@@ -356,7 +530,7 @@ export default function OrderHistoryPage() {
             </StatCard>
             <StatCard $color="#FF9800">
               <StatLabel>평균 주문금액</StatLabel>
-              <StatValue>{stats?.avgPrice?.toLocaleString() || 0}원</StatValue>
+              <StatValue><Money value={stats?.avgPrice} /></StatValue>
             </StatCard>
           </StatsRow>
 
@@ -418,6 +592,10 @@ export default function OrderHistoryPage() {
           </FilterSection>
 
           {/* 주문 테이블 */}
+          <TableBar>
+            {renderViewToggle()}
+            <TotalCount>총 <strong>{total.toLocaleString()}</strong>건</TotalCount>
+          </TableBar>
           <TableWrapper>
           <Table>
             <thead>
@@ -490,6 +668,8 @@ export default function OrderHistoryPage() {
                 )}
               <PageBtn disabled={page >= totalPages} onClick={() => setPage(page + 1)}>›</PageBtn>
             </Pagination>
+          )}
+            </>
           )}
         </Content>
       </MainArea>

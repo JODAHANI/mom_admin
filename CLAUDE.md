@@ -50,6 +50,7 @@ admin/
 │   ├── ProductForm.js       # 상품 폼 (등록/수정 공용, 이미지 드래그앤드롭)
 │   ├── OrderCard.js         # 주문 카드 (상태 진행, 취소, 하이라이트)
 │   ├── CategoryList.js      # 카테고리 리스트 (인라인 편집, 순서 변경)
+│   ├── SalesCalendar.js     # 월별 매출 달력 (일별 매출/건수/취소, 최고·최저일 강조)
 │   ├── Toast.js             # 토스트 알림 Context (success, error, staffCall, order)
 │   └── Toggle.js            # 토글 스위치 (sm/md 사이즈)
 ├── hooks/
@@ -57,7 +58,7 @@ admin/
 │   ├── useProducts.js       # CRUD + reorder + soldOut + toggleChannel
 │   ├── useCategories.js     # CRUD + reorder
 │   ├── useOrders.js         # 목록 + 상태변경 + WebSocket (NEW_ORDER, STAFF_CALL)
-│   ├── useOrderHistory.js   # 주문내역 조회 + 통계 계산
+│   ├── useOrderHistory.js   # 주문내역 조회 + 통계 + 월별 매출집계(useMonthlySales)
 │   ├── useTables.js         # CRUD + status (30초 자동 갱신)
 │   └── useNotices.js        # CRUD
 ├── lib/
@@ -91,10 +92,18 @@ admin/
 - 주문 취소, 새 주문 하이라이트 애니메이션
 
 ### /order-history
-- 날짜 범위 필터 (오늘/이번주/이번달)
-- 상태, 테이블, 메뉴 검색 필터
-- 통계 카드: 총 주문, 총 매출, 취소 건수, 평균 주문금액
-- 페이지네이션 (20건 단위)
+- 뷰 토글: **리스트 / 매출달력** (`viewMode` state, 활성 뷰의 쿼리만 `enabled`로 실행)
+- 리스트 뷰
+  - 날짜 범위 필터 (오늘/이번주/이번달)
+  - 상태, 테이블, 메뉴 검색 필터
+  - 통계 카드: 총 주문, 총 매출, 취소 건수, 평균 주문금액
+  - 페이지네이션 (20건 단위)
+- 매출달력 뷰 (`SalesCalendar` + `useMonthlySales`)
+  - 월 이동(‹ ›) / 오늘 버튼, 7열 그리드(일~토)
+  - 일별 매출/건수/취소 표시, 최고 매출일(빨강) · 최저 매출일(파랑) 강조
+  - 월간 통계: 이 달 주문수, 이 달 매출, 일 평균 매출(매출 있는 날 기준), 최고 매출일
+  - 날짜 셀 클릭 → 해당 일자로 리스트 뷰 전환 + 필터 초기화
+- 금액 표시: `Money` 컴포넌트로 데스크탑은 원 단위, 모바일은 만/억 단위 축약
 
 ### /tables
 - 층별 필터 (전체, 1층, 2층, 야외)
