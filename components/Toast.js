@@ -33,7 +33,7 @@ const ToastItem = styled.div`
   line-height: 1.4;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   animation: ${(p) => (p.$removing ? fadeOut : slideUp)} 0.25s ease forwards;
-  cursor: ${(p) => (p.$clickable ? 'pointer' : 'default')};
+  cursor: pointer;
   background: ${(p) =>
     p.$type === 'success' ? '#1B1D1F' :
     p.$type === 'error' ? '#FF3B30' :
@@ -73,8 +73,7 @@ export function ToastProvider({ children }) {
   }, []);
 
   const handleClick = (toast) => {
-    if (!toast.onClick) return;
-    toast.onClick();
+    if (toast.onClick) toast.onClick();
     setToasts((prev) =>
       prev.map((t) => (t.id === toast.id ? { ...t, removing: true } : t))
     );

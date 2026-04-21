@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { QRCodeSVG } from 'qrcode.react';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
+import OrderCreateModal from '../components/OrderCreateModal';
 import { useTables, useUpdateTable, useCreateTable, useDeleteTable } from '../hooks/useTables';
 import { useAuth } from '../hooks/useAuth';
 
@@ -16,15 +17,15 @@ const statusColors = {
 };
 
 const statusLabels = {
-  pending: '대기중',
+  pending: '조리대기',
   accepted: '접수',
-  preparing: '준비중',
-  ready: '준비완료',
+  preparing: '조리시작',
+  ready: '조리완료',
 };
 
 const allStatusLabels = {
   ...statusLabels,
-  served: '서빙완료',
+  served: '전달완료',
   cancelled: '취소',
 };
 
@@ -359,6 +360,46 @@ const ModalBody = styled.div`
   padding: 24px;
 `;
 
+const SectionTitleRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 20px 0 12px;
+  padding-top: 16px;
+  border-top: 1px solid #f2f3f5;
+`;
+
+const SectionTitleText = styled.div`
+  font-size: 15px;
+  font-weight: 700;
+  color: #191f28;
+`;
+
+const AddOrderBtn = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 12px;
+  border: 1px solid #3182F6;
+  border-radius: 999px;
+  background: white;
+  color: #3182F6;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    background: #3182F6;
+    color: white;
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+`;
+
 const InfoRow = styled.div`
   display: flex;
   justify-content: space-between;
@@ -429,6 +470,69 @@ const EmptyOrders = styled.div`
   padding: 24px;
   color: #8b95a1;
   font-size: 14px;
+`;
+
+const TotalBox = styled.div`
+  background: #F0F6FF;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const TotalLabel = styled.div`
+  font-size: 14px;
+  color: #1B6CE5;
+  font-weight: 600;
+`;
+
+const TotalAmount = styled.div`
+  font-size: 22px;
+  font-weight: 800;
+  color: #1B6CE5;
+  font-variant-numeric: tabular-nums;
+`;
+
+const ConfirmAmount = styled.div`
+  font-size: 28px;
+  font-weight: 800;
+  color: #F44336;
+  text-align: center;
+  margin: 16px 0 8px;
+  font-variant-numeric: tabular-nums;
+`;
+
+const ConfirmQuestion = styled.div`
+  font-size: 15px;
+  color: #333;
+  text-align: center;
+  margin-bottom: 8px;
+  line-height: 1.5;
+`;
+
+const ConfirmHint = styled.div`
+  font-size: 12px;
+  color: #8b95a1;
+  text-align: center;
+  margin-bottom: 8px;
+`;
+
+const CancelConfirmBtn = styled.button`
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #E5E8EB;
+  border-radius: 10px;
+  background: white;
+  color: #333;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: #F5F6F8;
+  }
 `;
 
 const ModalFooter = styled.div`
@@ -627,25 +731,48 @@ export default function TablesPage() {
   const deleteTable = useDeleteTable();
   const [floorFilter, setFloorFilter] = useState('all');
   const [selectedTable, setSelectedTable] = useState(null);
+  const [confirmClearTable, setConfirmClearTable] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [qrTable, setQrTable] = useState(null);
   const [showQrAll, setShowQrAll] = useState(false);
+  const [orderTable, setOrderTable] = useState(null);
   const printRef = useRef(null);
   const [newFloor, setNewFloor] = useState('1');
   const [newNumber, setNewNumber] = useState('');
+
+  useEffect(() => {
+    if (!selectedTable) return;
+    const fresh = tables.find((t) => t._id === selectedTable._id);
+    if (fresh && fresh !== selectedTable) setSelectedTable(fresh);
+  }, [tables]);
 
   const filtered = floorFilter === 'all'
     ? tables
     : tables.filter((t) => t.floor === Number(floorFilter));
 
-  const handleClearTable = () => {
+  const getSessionTotal = (table) => {
+    if (!table) return 0;
+    return (table.allOrders || [])
+      .filter((o) => o.status !== 'cancelled')
+      .reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+  };
+
+  const handleAskClear = () => {
     if (!selectedTable) return;
-    if (window.confirm('이 테이블을 비우시겠습니까?')) {
-      updateTable.mutate(
-        { id: selectedTable._id, isOccupied: false, currentOrderCount: 0, lastClearedAt: new Date().toISOString() },
-        { onSuccess: () => setSelectedTable(null) }
-      );
-    }
+    setConfirmClearTable(selectedTable);
+  };
+
+  const handleConfirmClear = () => {
+    if (!confirmClearTable) return;
+    updateTable.mutate(
+      { id: confirmClearTable._id, isOccupied: false, currentOrderCount: 0, lastClearedAt: new Date().toISOString() },
+      {
+        onSuccess: () => {
+          setConfirmClearTable(null);
+          setSelectedTable(null);
+        },
+      }
+    );
   };
 
   const handleDeleteTable = () => {
@@ -785,7 +912,23 @@ export default function TablesPage() {
                     </InfoRow>
                   )}
 
-                  <SectionTitle>미완료 주문</SectionTitle>
+                  {(selectedTable.allOrders || []).length > 0 && (
+                    <TotalBox>
+                      <TotalLabel>세션 합산 (계산 대상)</TotalLabel>
+                      <TotalAmount>{getSessionTotal(selectedTable).toLocaleString()}원</TotalAmount>
+                    </TotalBox>
+                  )}
+
+                  <SectionTitleRow>
+                    <SectionTitleText>미완료 주문</SectionTitleText>
+                    <AddOrderBtn onClick={() => setOrderTable(selectedTable)}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
+                      주문 추가
+                    </AddOrderBtn>
+                  </SectionTitleRow>
                   {(() => {
                     const incomplete = (selectedTable.allOrders || []).filter(o => o.status !== 'served' && o.status !== 'cancelled');
                     return incomplete.length === 0 ? (
@@ -834,10 +977,37 @@ export default function TablesPage() {
                 <ModalFooter>
                   <DeleteBtn onClick={handleDeleteTable}>삭제</DeleteBtn>
                   {(selectedTable.allOrders?.length > 0 || selectedTable.activeOrders?.length > 0) && (
-                    <ClearBtn onClick={handleClearTable} disabled={updateTable.isPending}>
+                    <ClearBtn onClick={handleAskClear} disabled={updateTable.isPending}>
                       테이블 비우기
                     </ClearBtn>
                   )}
+                </ModalFooter>
+              </Modal>
+            </Overlay>
+          )}
+          {/* 테이블 비우기 확인 모달 */}
+          {confirmClearTable && (
+            <Overlay onClick={() => !updateTable.isPending && setConfirmClearTable(null)}>
+              <Modal onClick={(e) => e.stopPropagation()} style={{ width: 400, maxWidth: 'calc(100vw - 32px)' }}>
+                <ModalHeader>
+                  <ModalTitle>테이블 비우기</ModalTitle>
+                  <CloseBtn onClick={() => !updateTable.isPending && setConfirmClearTable(null)}>&times;</CloseBtn>
+                </ModalHeader>
+                <ModalBody>
+                  <ConfirmQuestion>
+                    {confirmClearTable.floor}층 {confirmClearTable.number}번 테이블 합산 금액
+                  </ConfirmQuestion>
+                  <ConfirmAmount>{getSessionTotal(confirmClearTable).toLocaleString()}원</ConfirmAmount>
+                  <ConfirmQuestion>계산이 완료되었나요?</ConfirmQuestion>
+                  <ConfirmHint>한 번 비우면 되돌릴 수 없어요</ConfirmHint>
+                </ModalBody>
+                <ModalFooter>
+                  <CancelConfirmBtn onClick={() => setConfirmClearTable(null)} disabled={updateTable.isPending}>
+                    취소
+                  </CancelConfirmBtn>
+                  <ClearBtn onClick={handleConfirmClear} disabled={updateTable.isPending}>
+                    {updateTable.isPending ? '비우는 중...' : '비우기'}
+                  </ClearBtn>
                 </ModalFooter>
               </Modal>
             </Overlay>
@@ -894,6 +1064,14 @@ export default function TablesPage() {
                 </QrModalInner>
               </Modal>
             </Overlay>
+          )}
+
+          {/* 주문 추가 모달 */}
+          {orderTable && (
+            <OrderCreateModal
+              table={orderTable}
+              onClose={() => setOrderTable(null)}
+            />
           )}
 
           {/* QR코드 전체/개별 인쇄 모달 */}

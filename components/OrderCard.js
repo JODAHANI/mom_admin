@@ -15,11 +15,11 @@ const statusColors = {
 };
 
 const statusLabels = {
-  pending: '대기중',
+  pending: '조리대기',
   accepted: '접수',
-  preparing: '준비중',
-  ready: '준비완료',
-  served: '서빙완료',
+  preparing: '조리시작',
+  ready: '조리완료',
+  served: '전달완료',
   cancelled: '취소',
 };
 
@@ -30,9 +30,9 @@ const nextStatus = {
 };
 
 const nextStatusLabel = {
-  pending: '준비시작',
-  preparing: '준비완료',
-  ready: '서빙완료',
+  pending: '조리시작',
+  preparing: '조리완료',
+  ready: '전달완료',
 };
 
 const flash = keyframes`
@@ -46,9 +46,9 @@ const spin = keyframes`
 
 const Spinner = styled.span`
   display: inline-block;
-  width: 14px;
-  height: 14px;
-  border: 2px solid ${(p) => p.$color || 'rgba(255,255,255,0.4)'};
+  width: 20px;
+  height: 20px;
+  border: 3px solid ${(p) => p.$color || 'rgba(255,255,255,0.4)'};
   border-top-color: ${(p) => p.$topColor || 'white'};
   border-radius: 50%;
   animation: ${spin} 0.7s linear infinite;
@@ -59,8 +59,8 @@ const Card = styled.div`
   background: ${(p) => (p.$highlight ? '#3182F6' : 'white')};
   border-radius: 12px;
   border-left: 12px solid ${(p) => statusColors[p.$status]?.bg || '#E5E8EB'};
-  padding: 16px;
-  margin-bottom: 12px;
+  padding: 20px;
+  margin-bottom: 18px;
   transition: background 0.5s ease;
   ${(p) => p.$animating && css`animation: ${flash} 0.5s ease forwards;`}
 `;
@@ -69,26 +69,65 @@ const TopRow = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
 `;
 
 const TableInfo = styled.div`
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 700;
   color: ${(p) => (p.$highlight ? 'white' : '#1b1d1f')};
   transition: color 0.5s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 `;
 
+const TableDot = styled.span`
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: ${(p) => p.$color};
+  flex-shrink: 0;
+`;
+
+const SeqBadge = styled.span`
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  background: ${(p) => (p.$highlight ? 'rgba(255,255,255,0.2)' : '#F2F3F5')};
+  color: ${(p) => (p.$highlight ? 'white' : '#4B5563')};
+  font-variant-numeric: tabular-nums;
+`;
+
+const TABLE_COLORS = [
+  '#EF4444', '#F97316', '#F59E0B', '#EAB308', '#84CC16',
+  '#22C55E', '#10B981', '#14B8A6', '#06B6D4', '#0EA5E9',
+  '#3B82F6', '#6366F1', '#8B5CF6', '#A855F7', '#D946EF',
+  '#EC4899', '#F43F5E',
+];
+
+function getTableColor(id) {
+  if (!id) return '#9CA3AF';
+  const s = String(id);
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return TABLE_COLORS[h % TABLE_COLORS.length];
+}
+
 const TimeAgo = styled.div`
-  font-size: 13px;
+  font-size: 16px;
   color: ${(p) => (p.$highlight ? 'rgba(255,255,255,0.8)' : '#8b95a1')};
   transition: color 0.5s ease;
 `;
 
 const ItemsList = styled.div`
-  font-size: 14px;
+  font-size: 17px;
+  line-height: 1.6;
   color: ${(p) => (p.$highlight ? 'rgba(255,255,255,0.9)' : '#333')};
-  margin-bottom: 12px;
+  margin-bottom: 20px;
   transition: color 0.5s ease;
 `;
 
@@ -96,36 +135,42 @@ const BottomRow = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 20px;
+`;
+
+const ActionRow = styled.div`
+  display: flex;
+  gap: 10px;
 `;
 
 const TotalPrice = styled.div`
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 800;
   color: ${(p) => (p.$highlight ? 'white' : '#1b1d1f')};
   transition: color 0.5s ease;
 `;
 
 const StatusBadge = styled.span`
   display: inline-block;
-  padding: 4px 10px;
+  padding: 5px 12px;
   border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   background: ${(p) => statusColors[p.$status]?.bg || '#E5E8EB'};
   color: ${(p) => statusColors[p.$status]?.text || '#333'};
 `;
 
 const ActionButton = styled.button`
-  padding: 6px 12px;
+  flex: 1;
+  padding: 18px;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   background: ${(p) => (p.$highlight ? 'white' : '#3182F6')};
   color: ${(p) => (p.$highlight ? '#3182F6' : 'white')};
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 17px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.5s ease;
-  min-width: 72px;
 
   &:hover {
     opacity: 0.85;
@@ -138,15 +183,15 @@ const ActionButton = styled.button`
 `;
 
 const CancelButton = styled.button`
-  padding: 6px 12px;
-  border: 1px solid #E5E8EB;
-  border-radius: 8px;
+  flex: 1;
+  padding: 18px;
+  border: 1.5px solid #E5E8EB;
+  border-radius: 12px;
   background: white;
   color: #F44336;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 17px;
+  font-weight: 700;
   cursor: pointer;
-  min-width: 52px;
 
   &:hover {
     background: #FFF5F5;
@@ -157,12 +202,6 @@ const CancelButton = styled.button`
     cursor: not-allowed;
     opacity: 0.8;
   }
-`;
-
-const RightGroup = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
 `;
 
 function getTimeAgo(dateString) {
@@ -244,18 +283,26 @@ export default function OrderCard({ order }) {
     <Card ref={cardRef} $status={status} $highlight={highlight} $animating={animating}>
       <TopRow>
         <TableInfo $highlight={highlight}>
-          {order.tableNumber
-            ? `${order.floor || 1}층 ${order.tableNumber}번 테이블`
-            : `주문 #${(orderId || '').slice(-6)}`}
-          <StatusBadge $status={status} style={{ marginLeft: 12 }}>{statusLabels[status] || status}</StatusBadge>
+          {order.tableNumber && <TableDot $color={getTableColor(order.tableId)} />}
+          <span>
+            {order.tableNumber
+              ? `${order.floor || 1}층 ${order.tableNumber}번 테이블`
+              : `주문 #${(orderId || '').slice(-6)}`}
+          </span>
+          {order.sessionSeq ? (
+            <SeqBadge $highlight={highlight}>#{order.sessionSeq}</SeqBadge>
+          ) : null}
+          <StatusBadge $status={status} style={{ marginLeft: 4 }}>{statusLabels[status] || status}</StatusBadge>
         </TableInfo>
         <TimeAgo $highlight={highlight}>{getTimeAgo(order.createdAt)}</TimeAgo>
       </TopRow>
       <ItemsList $highlight={highlight}>{itemsText || '항목 없음'}</ItemsList>
       <BottomRow>
         <TotalPrice $highlight={highlight}>{Number(total).toLocaleString()}원</TotalPrice>
-        <RightGroup>
-          {status !== 'served' && status !== 'cancelled' && (
+      </BottomRow>
+      {(status !== 'cancelled' || next) && (
+        <ActionRow>
+          {status !== 'cancelled' && (
             <CancelButton onClick={handleCancel} disabled={updateStatus.isPending}>
               {updateStatus.isPending ? (
                 <Spinner $color="rgba(244,67,54,0.25)" $topColor="#F44336" />
@@ -273,8 +320,8 @@ export default function OrderCard({ order }) {
               )}
             </ActionButton>
           )}
-        </RightGroup>
-      </BottomRow>
+        </ActionRow>
+      )}
     </Card>
   );
 }

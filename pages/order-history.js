@@ -16,11 +16,11 @@ const statusColors = {
 };
 
 const statusLabels = {
-  pending: '대기중',
+  pending: '조리대기',
   accepted: '접수',
-  preparing: '준비중',
-  ready: '준비완료',
-  served: '서빙완료',
+  preparing: '조리시작',
+  ready: '조리완료',
+  served: '전달완료',
   cancelled: '취소',
 };
 
@@ -561,11 +561,11 @@ export default function OrderHistoryPage() {
               <FilterLabel>상태</FilterLabel>
               <FilterSelect value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
                 <option value="all">전체</option>
-                <option value="served">서빙완료</option>
+                <option value="served">전달완료</option>
                 <option value="cancelled">취소</option>
-                <option value="pending">대기중</option>
-                <option value="preparing">준비중</option>
-                <option value="ready">준비완료</option>
+                <option value="pending">조리대기</option>
+                <option value="preparing">조리시작</option>
+                <option value="ready">조리완료</option>
               </FilterSelect>
             </FilterGroup>
             <FilterGroup>

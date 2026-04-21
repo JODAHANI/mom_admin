@@ -71,10 +71,11 @@ const EmptyState = styled.div`
 
 const statusTabs = [
   { label: '미완료', value: 'incomplete' },
-  { label: '대기중', value: 'pending' },
-  { label: '준비중', value: 'preparing' },
-  { label: '준비완료', value: 'ready' },
-  { label: '서빙완료', value: 'served' },
+  { label: '조리대기', value: 'pending' },
+  { label: '조리시작', value: 'preparing' },
+  { label: '조리완료', value: 'ready' },
+  { label: '전달완료', value: 'served' },
+  { label: '취소', value: 'cancelled' },
 ];
 
 export default function OrdersPage() {

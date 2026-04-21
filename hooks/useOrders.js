@@ -23,7 +23,31 @@ export function useOrders(status) {
         params.status = status;
       }
       const { data } = await api.get('/orders', { params });
+      if (status === 'incomplete') {
+        const list = Array.isArray(data) ? data : data?.data;
+        if (Array.isArray(list)) {
+          const filtered = list.filter((o) => o.status !== 'cancelled');
+          return Array.isArray(data) ? filtered : { ...data, data: filtered };
+        }
+      }
       return data;
+    },
+  });
+}
+
+export function useCreateOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body) => {
+      const { data } = await api.post('/orders', body);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['tables-status'] });
+      queryClient.invalidateQueries({ queryKey: ['order-history'] });
+      queryClient.invalidateQueries({ queryKey: ['order-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['monthly-sales'] });
     },
   });
 }
