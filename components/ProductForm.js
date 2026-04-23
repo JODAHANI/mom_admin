@@ -173,7 +173,6 @@ export default function ProductForm({ initialData, onSubmit, onCancel, loading }
     image: '',
     categoryIds: [],
     badges: [],
-    kioskVisible: true,
     tableVisible: true,
   });
 
@@ -187,7 +186,6 @@ export default function ProductForm({ initialData, onSubmit, onCancel, loading }
         image: initialData.image || '',
         categoryIds: ids,
         badges: initialData.badges || [],
-        kioskVisible: initialData.kioskVisible !== false,
         tableVisible: initialData.tableVisible !== false,
       });
     }
@@ -331,14 +329,6 @@ export default function ProductForm({ initialData, onSubmit, onCancel, loading }
           )}
         </ImageUpload>
       </FieldGroup>
-
-      <ToggleField>
-        <ToggleLabel>키오스크 노출</ToggleLabel>
-        <Toggle
-          checked={form.kioskVisible}
-          onChange={(v) => handleChange('kioskVisible', v)}
-        />
-      </ToggleField>
 
       <ToggleField>
         <ToggleLabel>테이블주문 노출</ToggleLabel>

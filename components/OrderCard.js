@@ -131,6 +131,14 @@ const ItemsList = styled.div`
   transition: color 0.5s ease;
 `;
 
+const ServedByRow = styled.div`
+  font-size: 13px;
+  color: ${(p) => (p.$highlight ? 'rgba(255,255,255,0.75)' : '#8b95a1')};
+  margin-top: -10px;
+  margin-bottom: 14px;
+  transition: color 0.5s ease;
+`;
+
 const BottomRow = styled.div`
   display: flex;
   align-items: center;
@@ -296,6 +304,11 @@ export default function OrderCard({ order }) {
         </TableInfo>
         <TimeAgo $highlight={highlight}>{getTimeAgo(order.createdAt)}</TimeAgo>
       </TopRow>
+      {status === 'served' && order.servedBy && (
+        <ServedByRow $highlight={highlight}>
+          전달 · {order.servedBy.name || order.servedBy.email || '직원'}
+        </ServedByRow>
+      )}
       <ItemsList $highlight={highlight}>{itemsText || '항목 없음'}</ItemsList>
       <BottomRow>
         <TotalPrice $highlight={highlight}>{Number(total).toLocaleString()}원</TotalPrice>

@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { useAtom } from 'jotai';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from './Toast';
-import { sidebarOpenAtom } from '../store/atoms';
+import { sidebarOpenAtom, simpleViewAtom } from '../store/atoms';
 
 const Overlay = styled.div`
   display: none;
@@ -73,6 +73,47 @@ const Divider = styled.div`
   margin: 8px 20px;
 `;
 
+const SettingItem = styled.div`
+  padding: 12px 20px;
+  color: ${(p) => (p.$on ? 'white' : '#8B95A1')};
+  cursor: pointer;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  transition: color 0.15s;
+  user-select: none;
+
+  &:hover {
+    color: white;
+  }
+`;
+
+const MiniSwitch = styled.span`
+  width: 32px;
+  height: 18px;
+  border-radius: 999px;
+  background: ${(p) => (p.$on ? '#3182F6' : '#4B5563')};
+  position: relative;
+  transition: background 0.2s ease;
+  display: inline-block;
+  flex-shrink: 0;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: ${(p) => (p.$on ? '16px' : '2px')};
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: white;
+    transition: left 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+`;
+
 const LowerItem = styled.div`
   padding: 10px 20px;
   color: #8B95A1;
@@ -87,6 +128,7 @@ const LowerItem = styled.div`
 
 const menuItems = [
   { label: '상품', key: 'products', href: '/products' },
+  { label: '호출내역', key: 'call-history', href: '/call-history' },
   { label: '주문', key: 'orders', href: '/orders' },
   { label: '주문내역', key: 'order-history', href: '/order-history' },
   { label: '테이블 현황', key: 'tables', href: '/tables' },
@@ -100,6 +142,7 @@ export default function Sidebar({ active = 'products' }) {
   const { logout } = useAuth({ redirectIfUnauthenticated: false });
   const showToast = useToast();
   const [sidebarOpen, setSidebarOpen] = useAtom(sidebarOpenAtom);
+  const [simpleView, setSimpleView] = useAtom(simpleViewAtom);
 
   const handleLogout = () => {
     showToast('로그아웃 되었습니다', 'auth', { position: 'center-bottom' });
@@ -128,6 +171,11 @@ export default function Sidebar({ active = 'products' }) {
             </MenuItem>
           ))}
         </MenuSection>
+        <Divider />
+        <SettingItem $on={simpleView} onClick={() => setSimpleView(!simpleView)}>
+          <span>심플 모드</span>
+          <MiniSwitch $on={simpleView} />
+        </SettingItem>
         <Divider />
         <LowerItem onClick={handleLogout}>로그아웃</LowerItem>
         <div style={{ height: 20 }} />

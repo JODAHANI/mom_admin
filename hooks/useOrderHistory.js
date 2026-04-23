@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '../lib/api';
 
 export function useOrderHistory(
@@ -92,6 +92,45 @@ export function useMonthlySales(year, month, options = {}) {
       };
     },
     ...options,
+  });
+}
+
+export function usePrintReceipt() {
+  return useMutation({
+    mutationFn: async (orderId) => {
+      const { data } = await api.post(`/orders/${orderId}/print`);
+      return data;
+    },
+  });
+}
+
+export function useOrderSessions(
+  { startDate, endDate, status, tableNumber, search, page = 1, limit = 20, servedBy },
+  options = {},
+) {
+  return useQuery({
+    queryKey: ['order-sessions', startDate, endDate, status, tableNumber, search, page, servedBy],
+    queryFn: async () => {
+      const params = { page, limit };
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      if (status && status !== 'all') params.status = status;
+      if (tableNumber) params.tableNumber = tableNumber;
+      if (search) params.search = search;
+      if (servedBy) params.servedBy = servedBy;
+      const { data } = await api.get('/orders/sessions', { params });
+      return data;
+    },
+    ...options,
+  });
+}
+
+export function usePrintSession() {
+  return useMutation({
+    mutationFn: async (orderIds) => {
+      const { data } = await api.post('/orders/print-session', { orderIds });
+      return data;
+    },
   });
 }
 

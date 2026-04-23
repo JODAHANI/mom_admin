@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { useAtom, useAtomValue } from 'jotai';
-import { kioskModeAtom, notificationsAtom, sidebarOpenAtom } from '../store/atoms';
-import Toggle from './Toggle';
+import { notificationsAtom, sidebarOpenAtom } from '../store/atoms';
+import { useResolveStaffCall } from '../hooks/useStaffCalls';
+import { useToast } from './Toast';
 
 const HeaderBar = styled.header`
   height: 60px;
@@ -56,50 +57,50 @@ const TitleText = styled.span`
   }
 `;
 
-const Center = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  @media (max-width: 480px) {
-    display: none;
-  }
-`;
-
-const KioskLabel = styled.span`
-  font-size: 14px;
-  color: #8b95a1;
-`;
-
 const Right = styled.div`
   position: relative;
 `;
 
 const BellButton = styled.div`
-  font-size: 22px;
+  font-size: 28px;
+  width: 150px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   position: relative;
   cursor: pointer;
   user-select: none;
+  border-radius: 12px;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: #F2F3F5;
+  }
 
   &:active {
-    transform: scale(0.9);
+    transform: scale(0.96);
+    background: #E5E8EB;
   }
 `;
 
 const Badge = styled.div`
   position: absolute;
-  top: -4px;
-  right: -6px;
+  top: 4px;
+  right: 43px;
   background: #ff3b30;
   color: white;
   font-size: 11px;
-  min-width: 18px;
-  height: 18px;
-  border-radius: 50%;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
+  font-weight: 700;
+  border: 2px solid white;
 `;
 
 const slideDown = keyframes`
@@ -109,7 +110,7 @@ const slideDown = keyframes`
 
 const Dropdown = styled.div`
   position: absolute;
-  top: 36px;
+  top: calc(100% + 8px);
   right: 0;
   width: 360px;
   max-height: 480px;
@@ -222,11 +223,13 @@ function formatTime(date) {
 }
 
 export default function Header() {
-  const [kioskMode, setKioskMode] = useAtom(kioskModeAtom);
   const [notifications, setNotifications] = useAtom(notificationsAtom);
   const [sidebarOpen, setSidebarOpen] = useAtom(sidebarOpenAtom);
   const [open, setOpen] = useState(false);
+  const [resolvingId, setResolvingId] = useState(null);
   const dropdownRef = useRef(null);
+  const resolveCall = useResolveStaffCall();
+  const showToast = useToast();
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -249,6 +252,28 @@ export default function Header() {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   };
 
+  const handleNotiClick = (noti) => {
+    // 직원 호출 알림이면 resolve 처리 + 제거
+    if (noti.type === 'staffCall' && noti.callId) {
+      if (resolvingId) return;
+      setResolvingId(noti.id);
+      resolveCall.mutate(noti.callId, {
+        onSuccess: () => {
+          showToast('호출 처리 완료', 'success');
+          setNotifications((prev) => prev.filter((n) => n.id !== noti.id));
+        },
+        onError: (err) => {
+          const msg = err?.response?.data?.message || '처리에 실패했습니다';
+          showToast(msg, 'error');
+        },
+        onSettled: () => setResolvingId(null),
+      });
+      return;
+    }
+    // 그 외 알림은 단순 제거
+    handleDismiss(noti.id);
+  };
+
   return (
     <HeaderBar>
       <Left>
@@ -257,10 +282,6 @@ export default function Header() {
         </HamburgerBtn>
         <TitleText>테이블 홈</TitleText>
       </Left>
-      <Center>
-        <KioskLabel>키오스크 모드</KioskLabel>
-        <Toggle checked={kioskMode} onChange={setKioskMode} size="sm" />
-      </Center>
       <Right ref={dropdownRef}>
         <BellButton onClick={() => setOpen(!open)}>
           🔔
@@ -280,17 +301,37 @@ export default function Header() {
               {notifications.length === 0 ? (
                 <EmptyState>알림이 없습니다</EmptyState>
               ) : (
-                [...notifications].reverse().map((noti) => (
-                  <NotificationItem key={noti.id} onClick={() => handleDismiss(noti.id)}>
-                    <NotiIcon $type={noti.type}>
-                      {noti.type === 'staffCall' ? '🙋' : '🧾'}
-                    </NotiIcon>
-                    <NotiContent>
-                      <NotiMessage>{noti.message}</NotiMessage>
-                      <NotiTime>{formatTime(noti.time)}</NotiTime>
-                    </NotiContent>
-                  </NotificationItem>
-                ))
+                [...notifications].reverse().map((noti) => {
+                  const isResolving = resolvingId === noti.id;
+                  const isCall = noti.type === 'staffCall' && !!noti.callId;
+                  return (
+                    <NotificationItem
+                      key={noti.id}
+                      onClick={() => handleNotiClick(noti)}
+                      style={isResolving ? { opacity: 0.6, cursor: 'wait' } : undefined}
+                    >
+                      <NotiIcon $type={noti.type}>
+                        {noti.type === 'staffCall' ? '🙋' : '🧾'}
+                      </NotiIcon>
+                      <NotiContent>
+                        <NotiMessage>
+                          {noti.message}
+                          {isCall && !isResolving && (
+                            <span style={{ marginLeft: 8, fontSize: 12, color: '#3182F6', fontWeight: 700 }}>
+                              · 터치하여 처리
+                            </span>
+                          )}
+                          {isResolving && (
+                            <span style={{ marginLeft: 8, fontSize: 12, color: '#8b95a1' }}>
+                              · 처리중…
+                            </span>
+                          )}
+                        </NotiMessage>
+                        <NotiTime>{formatTime(noti.time)}</NotiTime>
+                      </NotiContent>
+                    </NotificationItem>
+                  );
+                })
               )}
             </NotificationList>
           </Dropdown>

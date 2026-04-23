@@ -5,7 +5,7 @@ export function useProducts(categoryId, search) {
   return useQuery({
     queryKey: ['products', categoryId, search],
     queryFn: async () => {
-      const params = {};
+      const params = { includeHidden: true };
       if (categoryId) params.category = categoryId;
       if (search) params.search = search;
       const { data } = await api.get('/products', { params });

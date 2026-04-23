@@ -1,11 +1,15 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { QRCodeSVG } from 'qrcode.react';
+import { useAtom } from 'jotai';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import OrderCreateModal from '../components/OrderCreateModal';
-import { useTables, useUpdateTable, useCreateTable, useDeleteTable } from '../hooks/useTables';
+import { useToast } from '../components/Toast';
+import { useTables, useUpdateTable, useCreateTable, useDeleteTable, usePrintTableQR } from '../hooks/useTables';
+import { usePrintSession } from '../hooks/useOrderHistory';
 import { useAuth } from '../hooks/useAuth';
+import { autoPrintOnClearAtom } from '../store/atoms';
 
 const statusColors = {
   pending: { bg: '#FFC107', text: '#333' },
@@ -72,6 +76,49 @@ const PageTitle = styled.h2`
 
   @media (max-width: 480px) {
     font-size: 17px;
+  }
+`;
+
+const AutoPrintBtn = styled.button`
+  padding: 10px 18px;
+  background: white;
+  color: ${(p) => (p.$on ? '#3182F6' : '#1b1d1f')};
+  border: 1.5px solid #E5E8EB;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: #3182F6;
+  }
+`;
+
+const MiniSwitch = styled.span`
+  width: 32px;
+  height: 18px;
+  border-radius: 999px;
+  background: ${(p) => (p.$on ? '#3182F6' : '#D1D5DB')};
+  position: relative;
+  transition: background 0.2s ease;
+  display: inline-block;
+  flex-shrink: 0;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: ${(p) => (p.$on ? '16px' : '2px')};
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: white;
+    transition: left 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   }
 `;
 
@@ -539,6 +586,7 @@ const ModalFooter = styled.div`
   padding: 16px 24px;
   border-top: 1px solid #E5E8EB;
   display: flex;
+  flex-direction: column-reverse;
   gap: 8px;
 `;
 
@@ -629,6 +677,10 @@ const QrActions = styled.div`
   display: flex;
   gap: 8px;
   width: 100%;
+
+  @media print {
+    display: none;
+  }
 `;
 
 const QrPrintBtn = styled.button`
@@ -729,14 +781,16 @@ export default function TablesPage() {
   const updateTable = useUpdateTable();
   const createTable = useCreateTable();
   const deleteTable = useDeleteTable();
+  const printSession = usePrintSession();
+  const printTableQR = usePrintTableQR();
+  const showToast = useToast();
+  const [autoPrintOnClear, setAutoPrintOnClear] = useAtom(autoPrintOnClearAtom);
   const [floorFilter, setFloorFilter] = useState('all');
   const [selectedTable, setSelectedTable] = useState(null);
   const [confirmClearTable, setConfirmClearTable] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [qrTable, setQrTable] = useState(null);
-  const [showQrAll, setShowQrAll] = useState(false);
   const [orderTable, setOrderTable] = useState(null);
-  const printRef = useRef(null);
   const [newFloor, setNewFloor] = useState('1');
   const [newNumber, setNewNumber] = useState('');
 
@@ -764,12 +818,30 @@ export default function TablesPage() {
 
   const handleConfirmClear = () => {
     if (!confirmClearTable) return;
+    const tableToClear = confirmClearTable;
+    // 비우기 후에는 allOrders를 잃으니 미리 수집
+    const orderIdsToPrint = autoPrintOnClear
+      ? (tableToClear.allOrders || []).map((o) => o._id).filter(Boolean)
+      : null;
+    const tableLabel = `${tableToClear.floor || 1}층 ${tableToClear.number}번`;
+
     updateTable.mutate(
-      { id: confirmClearTable._id, isOccupied: false, currentOrderCount: 0, lastClearedAt: new Date().toISOString() },
+      { id: tableToClear._id, isOccupied: false, currentOrderCount: 0, lastClearedAt: new Date().toISOString() },
       {
         onSuccess: () => {
           setConfirmClearTable(null);
           setSelectedTable(null);
+
+          // 비우기 성공 후 영수증 자동 출력 (토글 ON + 주문 있음)
+          if (orderIdsToPrint && orderIdsToPrint.length > 0) {
+            printSession.mutate(orderIdsToPrint, {
+              onSuccess: () => showToast(`${tableLabel} 영수증 출력 완료`, 'success'),
+              onError: (err) => {
+                const msg = err?.response?.data?.message || '영수증 출력에 실패했습니다';
+                showToast(msg, 'error');
+              },
+            });
+          }
         },
       }
     );
@@ -799,12 +871,39 @@ export default function TablesPage() {
   };
 
   const getQrUrl = (table) => {
-    const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-    return `http://${host}:3001/table/${table.token}`;
+    return `http://192.168.219.101:3001/table/${table.token}`;
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrintQrOne = (table) => {
+    if (!table || printTableQR.isPending) return;
+    const label = `${table.floor || 1}층 ${table.number}번`;
+    printTableQR.mutate(
+      { id: table._id, url: getQrUrl(table) },
+      {
+        onSuccess: () => showToast(`${label} QR 출력 완료`, 'success'),
+        onError: (err) => {
+          const msg = err?.response?.data?.message || 'QR 출력에 실패했습니다';
+          showToast(msg, 'error');
+        },
+      },
+    );
+  };
+
+  const handlePrintQrAll = async () => {
+    if (printTableQR.isPending) return;
+    if (!window.confirm(`전체 ${tables.length}개 테이블 QR을 영수증 프린터로 출력합니다. 계속할까요?`)) return;
+    let ok = 0;
+    for (const t of tables) {
+      try {
+        await printTableQR.mutateAsync({ id: t._id, url: getQrUrl(t) });
+        ok += 1;
+      } catch (err) {
+        const msg = err?.response?.data?.message || 'QR 출력에 실패했습니다';
+        showToast(`${t.floor || 1}층 ${t.number}번: ${msg}`, 'error');
+        break;
+      }
+    }
+    if (ok > 0) showToast(`${ok}개 테이블 QR 출력 완료`, 'success');
   };
 
   if (loading) return null;
@@ -820,8 +919,17 @@ export default function TablesPage() {
         <Content>
           <TitleRow>
             <PageTitle>테이블 현황 ({emptyCount}석 여유 / {busyCount}석 사용중)</PageTitle>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <QrPrintAllBtn onClick={() => setShowQrAll(true)}>QR 전체 출력</QrPrintAllBtn>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <AutoPrintBtn
+                $on={autoPrintOnClear}
+                onClick={() => setAutoPrintOnClear(!autoPrintOnClear)}
+              >
+                영수증 자동출력
+                <MiniSwitch $on={autoPrintOnClear} />
+              </AutoPrintBtn>
+              <QrPrintAllBtn onClick={handlePrintQrAll} disabled={printTableQR.isPending}>
+                {printTableQR.isPending ? '출력 중...' : 'QR 전체 출력'}
+              </QrPrintAllBtn>
               <AddBtn onClick={() => setShowAddModal(true)}>+ 테이블 추가</AddBtn>
             </div>
           </TitleRow>
@@ -975,11 +1083,12 @@ export default function TablesPage() {
                   })()}
                 </ModalBody>
                 <ModalFooter>
-                  <DeleteBtn onClick={handleDeleteTable}>삭제</DeleteBtn>
-                  {(selectedTable.allOrders?.length > 0 || selectedTable.activeOrders?.length > 0) && (
+                  {(selectedTable.allOrders?.length > 0 || selectedTable.activeOrders?.length > 0) ? (
                     <ClearBtn onClick={handleAskClear} disabled={updateTable.isPending}>
                       테이블 비우기
                     </ClearBtn>
+                  ) : (
+                    <DeleteBtn onClick={handleDeleteTable}>삭제</DeleteBtn>
                   )}
                 </ModalFooter>
               </Modal>
@@ -1000,6 +1109,11 @@ export default function TablesPage() {
                   <ConfirmAmount>{getSessionTotal(confirmClearTable).toLocaleString()}원</ConfirmAmount>
                   <ConfirmQuestion>계산이 완료되었나요?</ConfirmQuestion>
                   <ConfirmHint>한 번 비우면 되돌릴 수 없어요</ConfirmHint>
+                  {autoPrintOnClear && (
+                    <ConfirmHint style={{ color: '#3182F6', marginTop: 8, fontWeight: 600 }}>
+                      🖨 비우기 직후 영수증이 자동으로 출력됩니다
+                    </ConfirmHint>
+                  )}
                 </ModalBody>
                 <ModalFooter>
                   <CancelConfirmBtn onClick={() => setConfirmClearTable(null)} disabled={updateTable.isPending}>
@@ -1055,11 +1169,17 @@ export default function TablesPage() {
                   <CloseBtn onClick={() => setQrTable(null)}>&times;</CloseBtn>
                 </ModalHeader>
                 <QrModalInner>
-                  <QrTableLabel>{qrTable.floor}층 {qrTable.number}번 테이블</QrTableLabel>
-                  <QRCodeSVG value={getQrUrl(qrTable)} size={200} level="H" />
-                  <QrUrl>{getQrUrl(qrTable)}</QrUrl>
+                  <QrPrintArea>
+                    <QrPrintCard>
+                      <QrPrintLabel>{qrTable.floor}층 {qrTable.number}번 테이블</QrPrintLabel>
+                      <QRCodeSVG value={getQrUrl(qrTable)} size={240} level="H" />
+                      <QrUrl>{getQrUrl(qrTable)}</QrUrl>
+                    </QrPrintCard>
+                  </QrPrintArea>
                   <QrActions>
-                    <QrPrintBtn onClick={() => { setQrTable(null); setShowQrAll(qrTable); }}>인쇄</QrPrintBtn>
+                    <QrPrintBtn onClick={() => handlePrintQrOne(qrTable)} disabled={printTableQR.isPending}>
+                      {printTableQR.isPending ? '출력 중...' : '영수증 프린터로 인쇄'}
+                    </QrPrintBtn>
                   </QrActions>
                 </QrModalInner>
               </Modal>
@@ -1072,31 +1192,6 @@ export default function TablesPage() {
               table={orderTable}
               onClose={() => setOrderTable(null)}
             />
-          )}
-
-          {/* QR코드 전체/개별 인쇄 모달 */}
-          {showQrAll && (
-            <Overlay onClick={() => setShowQrAll(false)}>
-              <Modal onClick={(e) => e.stopPropagation()} style={{ width: 600, maxWidth: 'calc(100vw - 32px)', maxHeight: '90vh' }}>
-                <ModalHeader>
-                  <ModalTitle>
-                    {showQrAll._id ? `${showQrAll.floor}층 ${showQrAll.number}번 QR 인쇄` : 'QR코드 전체 출력'}
-                  </ModalTitle>
-                  <CloseBtn onClick={() => setShowQrAll(false)}>&times;</CloseBtn>
-                </ModalHeader>
-                <QrPrintArea ref={printRef} id="qr-print-area">
-                  {(showQrAll._id ? [showQrAll] : tables).map((table) => (
-                    <QrPrintCard key={table._id}>
-                      <QrPrintLabel>{table.floor}층 {table.number}번</QrPrintLabel>
-                      <QRCodeSVG value={getQrUrl(table)} size={160} level="H" />
-                    </QrPrintCard>
-                  ))}
-                </QrPrintArea>
-                <ModalFooter>
-                  <QrPrintBtn onClick={handlePrint} style={{ flex: 1 }}>인쇄하기</QrPrintBtn>
-                </ModalFooter>
-              </Modal>
-            </Overlay>
           )}
         </Content>
       </MainArea>

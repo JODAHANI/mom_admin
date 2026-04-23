@@ -70,7 +70,6 @@ const EmptyState = styled.div`
 `;
 
 const statusTabs = [
-  { label: '미완료', value: 'incomplete' },
   { label: '조리대기', value: 'pending' },
   { label: '조리시작', value: 'preparing' },
   { label: '조리완료', value: 'ready' },
@@ -78,10 +77,20 @@ const statusTabs = [
   { label: '취소', value: 'cancelled' },
 ];
 
+const DEFAULT_STATUSES = ['pending', 'preparing', 'ready'];
+
 export default function OrdersPage() {
   const { loading } = useAuth();
-  const [statusFilter, setStatusFilter] = useState('incomplete');
-  const { data: orders = [], isLoading } = useOrders(statusFilter);
+  const [selectedStatuses, setSelectedStatuses] = useState(DEFAULT_STATUSES);
+  const { data: orders = [], isLoading } = useOrders(selectedStatuses);
+
+  const toggleStatus = (value) => {
+    setSelectedStatuses((prev) =>
+      prev.includes(value) ? prev.filter((s) => s !== value) : [...prev, value]
+    );
+  };
+
+  const isAllSelected = selectedStatuses.length === 0;
 
   useWebSocketOrders();
 
@@ -97,11 +106,17 @@ export default function OrdersPage() {
         <Content>
           <PageTitle>주문 관리</PageTitle>
           <TabsRow>
+            <Tab
+              $active={isAllSelected}
+              onClick={() => setSelectedStatuses([])}
+            >
+              전체
+            </Tab>
             {statusTabs.map((tab) => (
               <Tab
                 key={tab.value}
-                $active={statusFilter === tab.value}
-                onClick={() => setStatusFilter(tab.value)}
+                $active={selectedStatuses.includes(tab.value)}
+                onClick={() => toggleStatus(tab.value)}
               >
                 {tab.label}
               </Tab>

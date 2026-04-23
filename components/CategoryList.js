@@ -7,8 +7,10 @@ import {
   useUpdateCategory,
   useDeleteCategory,
   useReorderCategories,
+  useToggleCategoryHidden,
 } from '../hooks/useCategories';
 import { useToast } from './Toast';
+import Toggle from './Toggle';
 
 const Container = styled.div`
   max-width: 700px;
@@ -75,8 +77,13 @@ const OrderNumber = styled.span`
 
 const Name = styled.span`
   font-size: 15px;
-  color: #1b1d1f;
-  flex: 1;
+  color: ${(p) => (p.$hidden ? '#b0b8c1' : '#1b1d1f')};
+  text-decoration: ${(p) => (p.$hidden ? 'line-through' : 'none')};
+  margin-right: 12px;
+`;
+
+const ToggleWrap = styled.div`
+  margin-right: auto;
 `;
 
 const EditInput = styled.input`
@@ -169,6 +176,7 @@ export default function CategoryList() {
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
   const reorderCategories = useReorderCategories();
+  const toggleHidden = useToggleCategoryHidden();
 
   const showToast = useToast();
   const [newName, setNewName] = useState('');
@@ -273,7 +281,26 @@ export default function CategoryList() {
                 </>
               ) : (
                 <>
-                  <Name>{cat.name}</Name>
+                  <Name $hidden={cat.isHidden}>{cat.name}</Name>
+                  <ToggleWrap>
+                    <Toggle
+                      label="숨김"
+                      checked={!!cat.isHidden}
+                      onChange={() =>
+                        toggleHidden.mutate(catId, {
+                          onSuccess: (updated) =>
+                            showToast(
+                              updated?.isHidden
+                                ? '카테고리를 숨겼습니다'
+                                : '카테고리를 다시 표시합니다',
+                              'success'
+                            ),
+                        })
+                      }
+                      size="sm"
+                      color="#8B95A1"
+                    />
+                  </ToggleWrap>
                   <ArrowButton disabled={index === 0} onClick={() => handleMove(index, -1)}>&#9650;</ArrowButton>
                   <ArrowButton disabled={index === categoriesList.length - 1} onClick={() => handleMove(index, 1)}>&#9660;</ArrowButton>
                   <ActionButton onClick={() => handleEdit(cat)}>수정</ActionButton>
@@ -287,7 +314,7 @@ export default function CategoryList() {
         })}
         {categoriesList.length === 0 && (
           <Item>
-            <Name style={{ color: '#8b95a1', textAlign: 'center' }}>
+            <Name style={{ color: '#8b95a1', textAlign: 'center', flex: 1 }}>
               카테고리가 없습니다
             </Name>
           </Item>

@@ -50,3 +50,12 @@ export function useDeleteTable() {
     },
   });
 }
+
+export function usePrintTableQR() {
+  return useMutation({
+    mutationFn: async ({ id, url }) => {
+      const { data } = await api.post(`/tables/${id}/print-qr`, { url });
+      return data;
+    },
+  });
+}

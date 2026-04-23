@@ -171,17 +171,6 @@ export default function ProductCard({ product, onMoveUp, onMoveDown, isFirst, is
             color="#FF3B30"
           />
           <Toggle
-            label="키오스크"
-            checked={product.kioskVisible !== false}
-            onChange={() =>
-              toggleChannel.mutate({
-                id: product._id || product.id,
-                channel: 'kiosk',
-              })
-            }
-            size="sm"
-          />
-          <Toggle
             label="테이블주문"
             checked={product.tableVisible !== false}
             onChange={() =>

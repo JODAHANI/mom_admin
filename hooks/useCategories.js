@@ -5,7 +5,9 @@ export function useCategories() {
   return useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      const { data } = await api.get('/categories');
+      const { data } = await api.get('/categories', {
+        params: { includeHidden: true },
+      });
       return data;
     },
   });
@@ -55,6 +57,19 @@ export function useDeleteCategory() {
   return useMutation({
     mutationFn: async (id) => {
       const { data } = await api.delete(`/categories/${id}`);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    },
+  });
+}
+
+export function useToggleCategoryHidden() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id) => {
+      const { data } = await api.patch(`/categories/${id}/toggle-hidden`);
       return data;
     },
     onSuccess: () => {

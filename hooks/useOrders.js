@@ -6,30 +6,23 @@ import api from '../lib/api';
 import wsManager from '../lib/websocket';
 import { notificationsAtom, highlightOrderAtom } from '../store/atoms';
 
-export function useOrders(status) {
+export function useOrders(statuses = []) {
   const now = new Date();
   const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
+  const statusKey = [...statuses].sort().join(',');
+
   return useQuery({
-    queryKey: ['orders', status, localDate],
+    queryKey: ['orders', statusKey, localDate],
     queryFn: async () => {
       const params = {
         startDate: localDate,
         endDate: localDate,
       };
-      if (status === 'incomplete') {
-        params.excludeStatus = 'served';
-      } else if (status && status !== 'all') {
-        params.status = status;
+      if (statuses.length > 0) {
+        params.status = statuses.join(',');
       }
       const { data } = await api.get('/orders', { params });
-      if (status === 'incomplete') {
-        const list = Array.isArray(data) ? data : data?.data;
-        if (Array.isArray(list)) {
-          const filtered = list.filter((o) => o.status !== 'cancelled');
-          return Array.isArray(data) ? filtered : { ...data, data: filtered };
-        }
-      }
       return data;
     },
   });
@@ -110,12 +103,14 @@ export function useWebSocketOrders(showToast) {
         queryClient.invalidateQueries({ queryKey: ['tables-status'] });
       }
       if (message.type === 'STAFF_CALL') {
+        queryClient.invalidateQueries({ queryKey: ['staff-calls'] });
+        queryClient.invalidateQueries({ queryKey: ['call-history'] });
         const call = message.data;
         const tableInfo = call.tableNumber ? `${call.floor || 1}층 ${call.tableNumber}번` : '';
         const msg = tableInfo ? `${tableInfo} 테이블에서 직원을 호출했습니다` : '직원 호출이 왔습니다';
         setNotifications((prev) => [
           ...prev,
-          { id: Date.now(), type: 'staffCall', message: msg, time: new Date() },
+          { id: Date.now(), type: 'staffCall', message: msg, time: new Date(), callId: call._id || call.id },
         ]);
         showToast?.(`🙋 ${msg}`, 'staffCall');
       }
