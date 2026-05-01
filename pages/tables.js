@@ -590,6 +590,18 @@ const ModalFooter = styled.div`
   gap: 8px;
 `;
 
+const FloatingFooter = styled.div`
+  position: sticky;
+  bottom: 0;
+  padding: 16px 24px;
+  background: white;
+  border-top: 1px solid #E5E8EB;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+`;
+
 const DeleteBtn = styled.button`
   flex: 1;
   padding: 12px;
@@ -871,7 +883,7 @@ export default function TablesPage() {
   };
 
   const getQrUrl = (table) => {
-    return `http://192.168.219.101:3001/table/${table.token}`;
+    return `http://10.84.42.85:3001/table/${table.token}`;
   };
 
   const handlePrintQrOne = (table) => {
@@ -1008,11 +1020,7 @@ export default function TablesPage() {
                   </ModalTitle>
                   <CloseBtn onClick={() => setSelectedTable(null)}>&times;</CloseBtn>
                 </ModalHeader>
-                <ModalBody>
-                  <InfoRow>
-                    <InfoLabel>상태</InfoLabel>
-                    <InfoValue>{getStatusText(getTableStatus(selectedTable))}</InfoValue>
-                  </InfoRow>
+                <ModalBody style={{ paddingBottom: 16 }}>
                   {selectedTable.lastOrderTime && (
                     <InfoRow>
                       <InfoLabel>체류 시간</InfoLabel>
@@ -1022,7 +1030,7 @@ export default function TablesPage() {
 
                   {(selectedTable.allOrders || []).length > 0 && (
                     <TotalBox>
-                      <TotalLabel>세션 합산 (계산 대상)</TotalLabel>
+                      <TotalLabel>결제 금액</TotalLabel>
                       <TotalAmount>{getSessionTotal(selectedTable).toLocaleString()}원</TotalAmount>
                     </TotalBox>
                   )}
@@ -1082,15 +1090,15 @@ export default function TablesPage() {
                     );
                   })()}
                 </ModalBody>
-                <ModalFooter>
+                <FloatingFooter>
                   {(selectedTable.allOrders?.length > 0 || selectedTable.activeOrders?.length > 0) ? (
                     <ClearBtn onClick={handleAskClear} disabled={updateTable.isPending}>
-                      테이블 비우기
+                      결제
                     </ClearBtn>
                   ) : (
                     <DeleteBtn onClick={handleDeleteTable}>삭제</DeleteBtn>
                   )}
-                </ModalFooter>
+                </FloatingFooter>
               </Modal>
             </Overlay>
           )}
@@ -1099,7 +1107,7 @@ export default function TablesPage() {
             <Overlay onClick={() => !updateTable.isPending && setConfirmClearTable(null)}>
               <Modal onClick={(e) => e.stopPropagation()} style={{ width: 400, maxWidth: 'calc(100vw - 32px)' }}>
                 <ModalHeader>
-                  <ModalTitle>테이블 비우기</ModalTitle>
+                  <ModalTitle>결제</ModalTitle>
                   <CloseBtn onClick={() => !updateTable.isPending && setConfirmClearTable(null)}>&times;</CloseBtn>
                 </ModalHeader>
                 <ModalBody>
@@ -1120,7 +1128,7 @@ export default function TablesPage() {
                     취소
                   </CancelConfirmBtn>
                   <ClearBtn onClick={handleConfirmClear} disabled={updateTable.isPending}>
-                    {updateTable.isPending ? '비우는 중...' : '비우기'}
+                    {updateTable.isPending ? '결제 중...' : '결제'}
                   </ClearBtn>
                 </ModalFooter>
               </Modal>
