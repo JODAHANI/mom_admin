@@ -52,8 +52,24 @@ export function useUpdateOrderStatus() {
       const { data } = await api.patch(`/orders/${id}/status`, { status });
       return data;
     },
-    onSuccess: () => {
+    onMutate: async ({ id, status }) => {
+      await queryClient.cancelQueries({ queryKey: ['orders'] });
+      const snapshots = queryClient.getQueriesData({ queryKey: ['orders'] });
+      queryClient.setQueriesData({ queryKey: ['orders'] }, (old) => {
+        if (!old) return old;
+        const updateOne = (o) => ((o._id === id || o.id === id) ? { ...o, status } : o);
+        if (Array.isArray(old)) return old.map(updateOne);
+        if (Array.isArray(old?.data)) return { ...old, data: old.data.map(updateOne) };
+        return old;
+      });
+      return { snapshots };
+    },
+    onError: (_err, _vars, ctx) => {
+      ctx?.snapshots?.forEach(([key, data]) => queryClient.setQueryData(key, data));
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['tables-status'] });
     },
   });
 }

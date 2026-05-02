@@ -918,12 +918,18 @@ export default function TablesPage() {
       : null;
     const tableLabel = `${tableToClear.floor || 1}층 ${tableToClear.number}번`;
 
+    const paidAmount = getSessionTotal(tableToClear);
+
     updateTable.mutate(
       { id: tableToClear._id, isOccupied: false, currentOrderCount: 0, lastClearedAt: new Date().toISOString() },
       {
         onSuccess: () => {
           setConfirmClearTable(null);
           setSelectedTable(null);
+
+          showToast(`${tableLabel} 결제 완료`, 'success', {
+            sub: `${paidAmount.toLocaleString()}원`,
+          });
 
           // 비우기 성공 후 영수증 자동 출력 (토글 ON + 주문 있음)
           if (orderIdsToPrint && orderIdsToPrint.length > 0) {
@@ -1110,14 +1116,23 @@ export default function TablesPage() {
           {/* 테이블 상세 모달 */}
           {selectedTable && (
             <Overlay onClick={() => setSelectedTable(null)}>
-              <Modal onClick={(e) => e.stopPropagation()}>
+              <Modal
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  height: '95vh',
+                  maxHeight: '95vh',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden',
+                }}
+              >
                 <ModalHeader>
                   <ModalTitle>
                     {selectedTable.floor}층 {selectedTable.number}번 테이블
                   </ModalTitle>
                   <CloseBtn onClick={() => setSelectedTable(null)}>&times;</CloseBtn>
                 </ModalHeader>
-                <ModalBody style={{ paddingBottom: 16 }}>
+                <ModalBody style={{ paddingBottom: 16, flex: 1, overflowY: 'auto', minHeight: 0 }}>
                   <ActionBar>
                     <ActionBtn onClick={() => { setSelectedTable(null); setQrTable(selectedTable); }}>
                       QR코드

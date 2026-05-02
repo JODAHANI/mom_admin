@@ -20,8 +20,8 @@ const Modal = styled.div`
   border-radius: 16px;
   width: 960px;
   max-width: calc(100vw - 24px);
-  height: 85vh;
-  max-height: 720px;
+  height: 95vh;
+  max-height: 95vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -167,12 +167,6 @@ const ProductCard = styled.button`
   &:active {
     ${(p) => !p.$disabled && 'transform: translateY(0);'}
   }
-`;
-
-const ProductImg = styled.div`
-  width: 100%;
-  aspect-ratio: 1;
-  background: #f0f2f4 url(${(p) => p.$src || ''}) center/cover no-repeat;
 `;
 
 const SoldOutOverlay = styled.div`
@@ -527,7 +521,6 @@ export default function OrderCreateModal({ table, onClose }) {
                     disabled={p.isSoldOut}
                     onClick={() => addToCart(p)}
                   >
-                    <ProductImg $src={p.image} />
                     {p.isSoldOut && <SoldOutOverlay>품절</SoldOutOverlay>}
                     <ProductInfo>
                       <ProductName>{p.name}</ProductName>
