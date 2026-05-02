@@ -212,6 +212,119 @@ const CancelButton = styled.button`
   }
 `;
 
+const ModalOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+`;
+
+const ModalCard = styled.div`
+  background: white;
+  border-radius: 16px;
+  width: 400px;
+  max-width: 100%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+`;
+
+const ModalHead = styled.div`
+  padding: 20px 24px 4px;
+`;
+
+const ModalTitleText = styled.h3`
+  font-size: 18px;
+  font-weight: 800;
+  color: #191f28;
+  margin: 0;
+`;
+
+const ModalBodyArea = styled.div`
+  padding: 14px 24px 22px;
+`;
+
+const ModalLine = styled.div`
+  font-size: 15px;
+  color: #4B5563;
+  line-height: 1.55;
+  margin-bottom: 6px;
+`;
+
+const ModalSummaryBox = styled.div`
+  margin-top: 12px;
+  padding: 14px 16px;
+  background: #F8F9FB;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+`;
+
+const ModalSummaryRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: #4B5563;
+
+  strong {
+    color: #1B1D1F;
+    font-weight: 700;
+  }
+`;
+
+const ModalFootRow = styled.div`
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 16px;
+`;
+
+const ModalSecondaryBtn = styled.button`
+  flex: 1;
+  padding: 14px;
+  border: 1.5px solid #E5E8EB;
+  border-radius: 10px;
+  background: white;
+  color: #4B5563;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover {
+    background: #F8F9FB;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+`;
+
+const ModalDangerBtn = styled.button`
+  flex: 1;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  background: #F44336;
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover {
+    background: #E53935;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.8;
+  }
+`;
+
 function getTimeAgo(dateString) {
   if (!dateString) return '';
   const diff = Date.now() - new Date(dateString).getTime();
@@ -229,6 +342,7 @@ export default function OrderCard({ order }) {
   const [highlightOrder, setHighlightOrder] = useAtom(highlightOrderAtom);
   const [highlight, setHighlight] = useState(false);
   const [animating, setAnimating] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const cardRef = useRef(null);
   const orderId = order._id || order.id;
   const status = order.status || 'pending';
@@ -277,17 +391,30 @@ export default function OrderCard({ order }) {
     }
   };
 
-  const handleCancel = (e) => {
+  const handleCancelClick = (e) => {
     e.stopPropagation();
-    if (window.confirm('이 주문을 취소하시겠습니까?')) {
-      updateStatus.mutate({ id: orderId, status: 'cancelled' }, {
-        onSuccess: () => showToast(`${tableLabel} 주문이 취소되었습니다`, 'error'),
-        onError: () => showToast('취소에 실패했습니다', 'error'),
-      });
-    }
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmCancel = () => {
+    updateStatus.mutate({ id: orderId, status: 'cancelled' }, {
+      onSuccess: () => {
+        setShowCancelModal(false);
+        showToast(`${tableLabel} 주문이 취소되었습니다`, 'error');
+      },
+      onError: () => {
+        setShowCancelModal(false);
+        showToast('취소에 실패했습니다', 'error');
+      },
+    });
+  };
+
+  const closeCancelModal = () => {
+    if (!updateStatus.isPending) setShowCancelModal(false);
   };
 
   return (
+    <>
     <Card ref={cardRef} $status={status} $highlight={highlight} $animating={animating}>
       <TopRow>
         <TableInfo $highlight={highlight}>
@@ -316,7 +443,7 @@ export default function OrderCard({ order }) {
       {(status !== 'cancelled' || next) && (
         <ActionRow>
           {status !== 'cancelled' && (
-            <CancelButton onClick={handleCancel} disabled={updateStatus.isPending}>
+            <CancelButton onClick={handleCancelClick} disabled={updateStatus.isPending}>
               {updateStatus.isPending ? (
                 <Spinner $color="rgba(244,67,54,0.25)" $topColor="#F44336" />
               ) : (
@@ -336,5 +463,44 @@ export default function OrderCard({ order }) {
         </ActionRow>
       )}
     </Card>
+    {showCancelModal && (
+      <ModalOverlay onClick={closeCancelModal}>
+        <ModalCard onClick={(e) => e.stopPropagation()}>
+          <ModalHead>
+            <ModalTitleText>주문을 취소할까요?</ModalTitleText>
+          </ModalHead>
+          <ModalBodyArea>
+            <ModalLine>취소된 주문은 복구할 수 없어요.</ModalLine>
+            <ModalSummaryBox>
+              <ModalSummaryRow>
+                <span>주문</span>
+                <strong>{tableLabel}{order.sessionSeq ? ` · #${order.sessionSeq}` : ''}</strong>
+              </ModalSummaryRow>
+              <ModalSummaryRow>
+                <span>메뉴</span>
+                <strong style={{ maxWidth: '60%', textAlign: 'right' }}>{itemsText || '항목 없음'}</strong>
+              </ModalSummaryRow>
+              <ModalSummaryRow>
+                <span>금액</span>
+                <strong>{Number(total).toLocaleString()}원</strong>
+              </ModalSummaryRow>
+            </ModalSummaryBox>
+          </ModalBodyArea>
+          <ModalFootRow>
+            <ModalSecondaryBtn onClick={closeCancelModal} disabled={updateStatus.isPending}>
+              돌아가기
+            </ModalSecondaryBtn>
+            <ModalDangerBtn onClick={handleConfirmCancel} disabled={updateStatus.isPending}>
+              {updateStatus.isPending ? (
+                <Spinner $color="rgba(255,255,255,0.35)" $topColor="white" />
+              ) : (
+                '주문 취소'
+              )}
+            </ModalDangerBtn>
+          </ModalFootRow>
+        </ModalCard>
+      </ModalOverlay>
+    )}
+    </>
   );
 }
