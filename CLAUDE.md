@@ -22,9 +22,11 @@ npm start      # 프로덕션 3002
 ## 환경변수
 
 ```
-NEXT_PUBLIC_API_PORT=5001    # 백엔드 API 포트
-NEXT_PUBLIC_WS_PORT=5001     # WebSocket 포트
+NEXT_PUBLIC_API_URL=https://api.도메인.com    # 백엔드 베이스 URL (/api는 코드에서 자동 부착)
+NEXT_PUBLIC_WS_URL=wss://api.도메인.com        # WebSocket 풀 URL
 ```
+
+로컬 개발 시 둘 다 미설정이면 `http://localhost:5001` / `ws://localhost:5001`로 폴백.
 
 ## 디렉토리 구조
 

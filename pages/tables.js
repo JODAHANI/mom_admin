@@ -981,7 +981,7 @@ export default function TablesPage() {
   };
 
   const getQrUrl = (table) => {
-    return `http://192.0.0.2:3001/table/${table.token}`;
+    return `https://client-tau-seven-68.vercel.app/table/${table.token}`;
   };
 
   const handlePrintQrOne = (table) => {
