@@ -10,8 +10,8 @@ const PageContainer = styled.div`
 `;
 
 const MainArea = styled.div`
-  margin-left: 240px;
-  padding-top: 60px;
+  margin-left: var(--sidebar-width, 240px);
+  transition: margin-left 0.25s ease;
   flex: 1;
 
   @media (max-width: 768px) {
@@ -27,13 +27,6 @@ const Content = styled.div`
   }
 `;
 
-const PageTitle = styled.h2`
-  font-size: 20px;
-  font-weight: 700;
-  margin-bottom: 24px;
-  color: #1b1d1f;
-`;
-
 export default function CategoriesPage() {
   const { loading } = useAuth();
 
@@ -43,9 +36,8 @@ export default function CategoriesPage() {
     <PageContainer>
       <Sidebar active="categories" />
       <MainArea>
-        <Header />
         <Content>
-          <PageTitle>카테고리 관리</PageTitle>
+          <Header title="카테고리 관리" />
           <CategoryList />
         </Content>
       </MainArea>

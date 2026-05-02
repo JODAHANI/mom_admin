@@ -6,6 +6,7 @@ export const sidebarActiveAtom = atom('products');
 export const searchQueryAtom = atom('');
 export const highlightOrderAtom = atom(null);
 export const sidebarOpenAtom = atom(false);
+export const sidebarCollapsedAtom = atomWithStorage('sidebarCollapsed', false);
 
 // 테이블 비우기 시 영수증 자동 출력 (브라우저별 저장)
 export const autoPrintOnClearAtom = atomWithStorage('autoPrintOnClear', false);

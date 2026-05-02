@@ -52,8 +52,8 @@ const PageContainer = styled.div`
 `;
 
 const MainArea = styled.div`
-  margin-left: 240px;
-  padding-top: 60px;
+  margin-left: var(--sidebar-width, 240px);
+  transition: margin-left 0.25s ease;
   flex: 1;
 
   @media (max-width: 768px) {
@@ -71,18 +71,11 @@ const Content = styled.div`
 
 const PageHeader = styled.div`
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin-bottom: 20px;
   gap: 12px;
   flex-wrap: wrap;
-`;
-
-const PageTitle = styled.h2`
-  font-size: 20px;
-  font-weight: 700;
-  color: #191f28;
-  margin: 0;
 `;
 
 const ViewToggle = styled.div`
@@ -114,41 +107,94 @@ const ViewBtn = styled.button`
 
 /* 요약 카드 */
 const StatsRow = styled.div`
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
+  display: flex;
+  background: white;
+  border-radius: 16px;
+  padding: 20px 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  flex-wrap: wrap;
 
-  @media (max-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+  @media (max-width: 600px) {
+    padding: 14px 6px;
+    border-radius: 14px;
   }
 `;
 
 const StatCard = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  border-left: 12px solid ${(p) => p.$color || '#3182F6'};
+  --accent: ${(p) => p.$color || '#3182F6'};
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 16px;
+  position: relative;
 
-  @media (max-width: 480px) {
-    padding: 14px;
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 26px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  &:first-child::before {
+    display: none;
+  }
+
+  @media (max-width: 1000px) {
+    padding: 0 12px;
+  }
+
+  @media (max-width: 600px) {
+    flex: 1 1 50%;
+    padding: 10px 12px;
+
+    &::before {
+      width: 2px;
+      height: 20px;
+    }
+
+    &:nth-child(odd)::before {
+      display: none;
+    }
   }
 `;
 
 const StatLabel = styled.div`
-  font-size: 13px;
+  font-size: 10px;
   color: #8b95a1;
-  margin-bottom: 6px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  @media (max-width: 600px) {
+    font-size: 9px;
+    letter-spacing: 0.7px;
+    margin-bottom: 6px;
+  }
 `;
 
 const StatValue = styled.div`
-  font-size: 24px;
-  font-weight: 700;
-  color: #191f28;
+  font-size: clamp(16px, 1.8vw, 28px);
+  font-weight: 800;
+  color: var(--accent, #191f28);
+  letter-spacing: -0.6px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
-  @media (max-width: 480px) {
+  @media (max-width: 600px) {
     font-size: 20px;
+    letter-spacing: -0.4px;
   }
 `;
 
@@ -615,7 +661,7 @@ export default function OrderHistoryPage() {
       ? `${session.floor || 1}층 ${session.tableNumber}번`
       : `세션 ${session.id}`;
 
-    printSession.mutate({ orderIds: session.orderIds, withQR: true }, {
+    printSession.mutate(session.orderIds, {
       onSuccess: () => showToast(`${tableLabel} 영수증 출력 완료`, 'success'),
       onError: (err) => {
         const msg = err?.response?.data?.message || '영수증 출력에 실패했습니다';
@@ -723,10 +769,9 @@ export default function OrderHistoryPage() {
     <PageContainer>
       <Sidebar active="order-history" />
       <MainArea>
-        <Header />
         <Content>
+          <Header title="주문내역" />
           <PageHeader>
-            <PageTitle>주문내역</PageTitle>
             {renderViewToggle()}
           </PageHeader>
 

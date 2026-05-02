@@ -1,94 +1,108 @@
 import { useState, useRef, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
-import { useAtom, useAtomValue } from 'jotai';
-import { notificationsAtom, sidebarOpenAtom } from '../store/atoms';
+import { useAtom } from 'jotai';
+import { notificationsAtom, sidebarOpenAtom, sidebarCollapsedAtom } from '../store/atoms';
 import { useResolveStaffCall } from '../hooks/useStaffCalls';
 import { useToast } from './Toast';
 
-const HeaderBar = styled.header`
-  height: 60px;
-  background: white;
-  border-bottom: 1px solid #e5e8eb;
-  padding: 0 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: fixed;
-  top: 0;
-  left: 240px;
-  right: 0;
-  z-index: 100;
-
-  @media (max-width: 768px) {
-    left: 0;
-    padding: 0 12px;
-  }
-`;
-
-const Left = styled.div`
-  font-size: 20px;
-  font-weight: 700;
-  color: #1b1d1f;
+const Bar = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-bottom: 24px;
 `;
 
 const HamburgerBtn = styled.button`
-  display: none;
-  background: none;
+  width: 36px;
+  height: 56px;
+  padding: 0;
   border: none;
+  border-radius: 0 18px 18px 0;
+  background: #f2f3f5;
   cursor: pointer;
-  padding: 6px;
-  font-size: 22px;
-  color: #1b1d1f;
-  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: -24px;
+  position: relative;
+  transition: background 0.15s ease, padding 0.15s ease;
+
+  &:hover {
+    background: #e5e8eb;
+    padding-left: 4px;
+  }
+
+  &:active {
+    background: #d1d5da;
+  }
+
+  @media (min-width: 769px) {
+    display: ${(p) => (p.$sidebarCollapsed ? 'inline-flex' : 'none')};
+  }
 
   @media (max-width: 768px) {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: ${(p) => (p.$sidebarOpen ? 'none' : 'inline-flex')};
   }
 `;
 
-const TitleText = styled.span`
-  @media (max-width: 480px) {
-    font-size: 16px;
+const HamburgerHandle = styled.span`
+  width: 4px;
+  height: 28px;
+  background: #8b95a1;
+  border-radius: 2px;
+`;
+
+const Title = styled.h2`
+  font-size: 20px;
+  font-weight: 700;
+  color: #1b1d1f;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+  user-select: none;
+
+  &:active {
+    opacity: 0.7;
   }
 `;
 
-const Right = styled.div`
+const BellWrapper = styled.div`
   position: relative;
+  flex-shrink: 0;
 `;
 
-const BellButton = styled.div`
-  font-size: 28px;
-  width: 150px;
-  height: 52px;
+const BellButton = styled.button`
+  width: 40px;
+  height: 40px;
+  border: 1px solid #e5e8eb;
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+  font-size: 20px;
+  color: #1b1d1f;
+  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
   position: relative;
-  cursor: pointer;
   user-select: none;
-  border-radius: 12px;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, transform 0.1s ease;
 
   &:hover {
-    background: #F2F3F5;
+    background: #f8f9fb;
   }
 
   &:active {
     transform: scale(0.96);
-    background: #E5E8EB;
   }
 `;
 
 const Badge = styled.div`
   position: absolute;
-  top: 4px;
-  right: 43px;
+  top: -4px;
+  right: -4px;
   background: #ff3b30;
   color: white;
   font-size: 11px;
@@ -222,9 +236,10 @@ function formatTime(date) {
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-export default function Header() {
+export default function Header({ title }) {
   const [notifications, setNotifications] = useAtom(notificationsAtom);
   const [sidebarOpen, setSidebarOpen] = useAtom(sidebarOpenAtom);
+  const [sidebarCollapsed, setSidebarCollapsed] = useAtom(sidebarCollapsedAtom);
   const [open, setOpen] = useState(false);
   const [resolvingId, setResolvingId] = useState(null);
   const dropdownRef = useRef(null);
@@ -253,7 +268,6 @@ export default function Header() {
   };
 
   const handleNotiClick = (noti) => {
-    // 직원 호출 알림이면 resolve 처리 + 제거
     if (noti.type === 'staffCall' && noti.callId) {
       if (resolvingId) return;
       setResolvingId(noti.id);
@@ -270,20 +284,30 @@ export default function Header() {
       });
       return;
     }
-    // 그 외 알림은 단순 제거
     handleDismiss(noti.id);
   };
 
+  const openSidebar = () => {
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+      setSidebarOpen(true);
+    } else {
+      setSidebarCollapsed(false);
+    }
+  };
+
   return (
-    <HeaderBar>
-      <Left>
-        <HamburgerBtn onClick={() => setSidebarOpen(!sidebarOpen)}>
-          &#9776;
-        </HamburgerBtn>
-        <TitleText>테이블 홈</TitleText>
-      </Left>
-      <Right ref={dropdownRef}>
-        <BellButton onClick={() => setOpen(!open)}>
+    <Bar>
+      <HamburgerBtn
+        $sidebarOpen={sidebarOpen}
+        $sidebarCollapsed={sidebarCollapsed}
+        onClick={openSidebar}
+        aria-label="네비게이션 열기"
+      >
+        <HamburgerHandle />
+      </HamburgerBtn>
+      <Title onClick={openSidebar}>{title}</Title>
+      <BellWrapper ref={dropdownRef}>
+        <BellButton onClick={() => setOpen(!open)} aria-label="알림">
           🔔
           {notifications.length > 0 && (
             <Badge>{notifications.length > 99 ? '99+' : notifications.length}</Badge>
@@ -336,7 +360,7 @@ export default function Header() {
             </NotificationList>
           </Dropdown>
         )}
-      </Right>
-    </HeaderBar>
+      </BellWrapper>
+    </Bar>
   );
 }

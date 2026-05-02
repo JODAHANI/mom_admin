@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import OrderCard from '../components/OrderCard';
-import { useOrders, useWebSocketOrders } from '../hooks/useOrders';
+import { useOrders } from '../hooks/useOrders';
 import { useAuth } from '../hooks/useAuth';
 
 const PageContainer = styled.div`
@@ -12,8 +12,8 @@ const PageContainer = styled.div`
 `;
 
 const MainArea = styled.div`
-  margin-left: 240px;
-  padding-top: 60px;
+  margin-left: var(--sidebar-width, 240px);
+  transition: margin-left 0.25s ease;
   flex: 1;
 
   @media (max-width: 768px) {
@@ -29,13 +29,6 @@ const Content = styled.div`
   }
 `;
 
-const PageTitle = styled.h2`
-  font-size: 20px;
-  font-weight: 700;
-  margin-bottom: 20px;
-  color: #1b1d1f;
-`;
-
 const TabsRow = styled.div`
   display: flex;
   gap: 8px;
@@ -44,12 +37,13 @@ const TabsRow = styled.div`
 `;
 
 const Tab = styled.button`
-  padding: 8px 16px;
+  padding: 12px 24px;
   border: 1px solid ${(p) => (p.$active ? '#3182F6' : '#E5E8EB')};
-  border-radius: 20px;
+  border-radius: 24px;
   background: ${(p) => (p.$active ? '#3182F6' : 'white')};
   color: ${(p) => (p.$active ? 'white' : '#333')};
-  font-size: 14px;
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
 
@@ -92,8 +86,6 @@ export default function OrdersPage() {
 
   const isAllSelected = selectedStatuses.length === 0;
 
-  useWebSocketOrders();
-
   const ordersList = Array.isArray(orders) ? orders : orders?.data || [];
 
   if (loading) return null;
@@ -102,9 +94,8 @@ export default function OrdersPage() {
     <PageContainer>
       <Sidebar active="orders" />
       <MainArea>
-        <Header />
         <Content>
-          <PageTitle>주문 관리</PageTitle>
+          <Header title="주문 관리" />
           <TabsRow>
             <Tab
               $active={isAllSelected}

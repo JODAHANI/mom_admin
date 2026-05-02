@@ -17,8 +17,8 @@ const PageContainer = styled.div`
 `;
 
 const MainArea = styled.div`
-  margin-left: 240px;
-  padding-top: 60px;
+  margin-left: var(--sidebar-width, 240px);
+  transition: margin-left 0.25s ease;
   flex: 1;
 
   @media (max-width: 768px) {
@@ -37,14 +37,8 @@ const Content = styled.div`
 const TitleRow = styled.div`
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin-bottom: 24px;
-`;
-
-const PageTitle = styled.h2`
-  font-size: 20px;
-  font-weight: 700;
-  color: #1b1d1f;
 `;
 
 const DeleteButton = styled.button`
@@ -97,10 +91,9 @@ export default function EditProductPage() {
     <PageContainer>
       <Sidebar active="products" />
       <MainArea>
-        <Header />
         <Content>
+          <Header title="상품 수정" />
           <TitleRow>
-            <PageTitle>상품 수정</PageTitle>
             <DeleteButton onClick={handleDelete}>삭제</DeleteButton>
           </TitleRow>
           {isLoading ? (

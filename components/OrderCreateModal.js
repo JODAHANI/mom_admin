@@ -51,12 +51,12 @@ const Title = styled.h3`
 `;
 
 const CloseBtn = styled.button`
-  font-size: 24px;
+  font-size: 36px;
   color: #8b95a1;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 4px 12px;
   line-height: 1;
 
   &:hover {

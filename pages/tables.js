@@ -39,8 +39,8 @@ const PageContainer = styled.div`
 `;
 
 const MainArea = styled.div`
-  margin-left: 240px;
-  padding-top: 60px;
+  margin-left: var(--sidebar-width, 240px);
+  transition: margin-left 0.25s ease;
   flex: 1;
 
   @media (max-width: 768px) {
@@ -62,20 +62,11 @@ const TitleRow = styled.div`
   align-items: center;
   margin-bottom: 20px;
   gap: 12px;
+  flex-wrap: wrap;
 
   @media (max-width: 600px) {
     flex-direction: column;
     align-items: stretch;
-  }
-`;
-
-const PageTitle = styled.h2`
-  font-size: 20px;
-  font-weight: 700;
-  color: #191f28;
-
-  @media (max-width: 480px) {
-    font-size: 17px;
   }
 `;
 
@@ -210,12 +201,13 @@ const TabsRow = styled.div`
 `;
 
 const Tab = styled.button`
-  padding: 8px 20px;
+  padding: 14px 28px;
   border: 1px solid ${(p) => (p.$active ? '#3182F6' : '#E5E8EB')};
-  border-radius: 20px;
+  border-radius: 26px;
   background: ${(p) => (p.$active ? '#3182F6' : 'white')};
   color: ${(p) => (p.$active ? 'white' : '#333')};
-  font-size: 14px;
+  font-size: 17px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
 
@@ -396,12 +388,13 @@ const ModalTitle = styled.h3`
 `;
 
 const CloseBtn = styled.button`
-  font-size: 20px;
+  font-size: 32px;
+  line-height: 1;
   color: #8b95a1;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 4px;
+  padding: 4px 10px;
 
   &:hover {
     color: #191f28;
@@ -792,21 +785,6 @@ const QrPrintBtn = styled.button`
   }
 `;
 
-const QrPrintAllBtn = styled.button`
-  padding: 10px 20px;
-  background: white;
-  color: #3182F6;
-  border: 1px solid #3182F6;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-
-  &:hover {
-    background: #F0F6FF;
-  }
-`;
-
 const QrPrintArea = styled.div`
   @media print {
     position: fixed;
@@ -1005,23 +983,6 @@ export default function TablesPage() {
     );
   };
 
-  const handlePrintQrAll = async () => {
-    if (printTableQR.isPending) return;
-    if (!window.confirm(`전체 ${tables.length}개 테이블 QR을 영수증 프린터로 출력합니다. 계속할까요?`)) return;
-    let ok = 0;
-    for (const t of tables) {
-      try {
-        await printTableQR.mutateAsync({ id: t._id, url: getQrUrl(t) });
-        ok += 1;
-      } catch (err) {
-        const msg = err?.response?.data?.message || 'QR 출력에 실패했습니다';
-        showToast(`${t.floor || 1}층 ${t.number}번: ${msg}`, 'error');
-        break;
-      }
-    }
-    if (ok > 0) showToast(`${ok}개 테이블 QR 출력 완료`, 'success');
-  };
-
   if (loading) return null;
 
   const emptyCount = tables.filter((t) => getTableStatus(t) === 'empty').length;
@@ -1031,10 +992,15 @@ export default function TablesPage() {
     <PageContainer>
       <Sidebar active="tables" />
       <MainArea>
-        <Header />
         <Content>
+          <Header title={`테이블 현황 (${emptyCount}석 여유 / ${busyCount}석 사용중)`} />
           <TitleRow>
-            <PageTitle>테이블 현황 ({emptyCount}석 여유 / {busyCount}석 사용중)</PageTitle>
+            <TabsRow style={{ marginBottom: 0 }}>
+              <Tab $active={floorFilter === 'all'} onClick={() => setFloorFilter('all')}>전체</Tab>
+              <Tab $active={floorFilter === '1'} onClick={() => setFloorFilter('1')}>1층</Tab>
+              <Tab $active={floorFilter === '2'} onClick={() => setFloorFilter('2')}>2층</Tab>
+              <Tab $active={floorFilter === '3'} onClick={() => setFloorFilter('3')}>야외</Tab>
+            </TabsRow>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <AutoPrintBtn
                 $on={autoPrintOnClear}
@@ -1043,19 +1009,9 @@ export default function TablesPage() {
                 영수증 자동출력
                 <MiniSwitch $on={autoPrintOnClear} />
               </AutoPrintBtn>
-              <QrPrintAllBtn onClick={handlePrintQrAll} disabled={printTableQR.isPending}>
-                {printTableQR.isPending ? '출력 중...' : 'QR 전체 출력'}
-              </QrPrintAllBtn>
               <AddBtn onClick={() => setShowAddModal(true)}>+ 테이블 추가</AddBtn>
             </div>
           </TitleRow>
-
-          <TabsRow>
-            <Tab $active={floorFilter === 'all'} onClick={() => setFloorFilter('all')}>전체</Tab>
-            <Tab $active={floorFilter === '1'} onClick={() => setFloorFilter('1')}>1층</Tab>
-            <Tab $active={floorFilter === '2'} onClick={() => setFloorFilter('2')}>2층</Tab>
-            <Tab $active={floorFilter === '3'} onClick={() => setFloorFilter('3')}>야외</Tab>
-          </TabsRow>
 
           <Legend>
             <LegendItem><LegendDot $color="#4CAF50" />비어있음</LegendItem>

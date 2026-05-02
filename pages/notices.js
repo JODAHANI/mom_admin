@@ -18,8 +18,8 @@ const PageContainer = styled.div`
 `;
 
 const MainArea = styled.div`
-  margin-left: 240px;
-  padding-top: 60px;
+  margin-left: var(--sidebar-width, 240px);
+  transition: margin-left 0.25s ease;
   flex: 1;
 
   @media (max-width: 768px) {
@@ -33,13 +33,6 @@ const Content = styled.div`
   @media (max-width: 480px) {
     padding: 16px;
   }
-`;
-
-const PageTitle = styled.h2`
-  font-size: 20px;
-  font-weight: 700;
-  margin-bottom: 24px;
-  color: #1b1d1f;
 `;
 
 const Container = styled.div`
@@ -261,9 +254,8 @@ export default function NoticesPage() {
     <PageContainer>
       <Sidebar active="notices" />
       <MainArea>
-        <Header />
         <Content>
-          <PageTitle>공지사항 관리</PageTitle>
+          <Header title="공지사항 관리" />
           <Container>
             <AddForm>
               <Textarea

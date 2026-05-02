@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { useAtom } from 'jotai';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from './Toast';
-import { sidebarOpenAtom, simpleViewAtom } from '../store/atoms';
+import { sidebarOpenAtom, simpleViewAtom, sidebarCollapsedAtom } from '../store/atoms';
 
 const Overlay = styled.div`
   display: none;
@@ -23,14 +23,16 @@ const SidebarContainer = styled.aside`
   position: fixed;
   left: 0;
   top: 0;
-  background: #1b1d1f;
+  background: ${(p) => (p.$collapsed ? 'transparent' : '#1b1d1f')};
   padding-top: 60px;
   z-index: 101;
   display: flex;
   flex-direction: column;
-  transition: transform 0.25s ease;
+  transition: transform 0.25s ease, background 0.25s ease;
+  transform: translateX(${(p) => (p.$collapsed ? '-100%' : '0')});
 
   @media (max-width: 768px) {
+    background: ${(p) => (p.$open ? '#1b1d1f' : 'transparent')};
     transform: translateX(${(p) => (p.$open ? '0' : '-100%')});
   }
 `;
@@ -43,10 +45,32 @@ const Logo = styled.div`
   height: 60px;
   display: flex;
   align-items: center;
-  padding: 0 20px;
+  justify-content: space-between;
+  padding: 0 12px 0 20px;
   font-size: 18px;
   font-weight: 700;
   color: white;
+`;
+
+const CloseBtn = styled.button`
+  background: none;
+  border: none;
+  color: #8B95A1;
+  font-size: 26px;
+  line-height: 1;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+
+  &:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.06);
+  }
 `;
 
 const MenuSection = styled.div`
@@ -142,7 +166,16 @@ export default function Sidebar({ active = 'products' }) {
   const { logout } = useAuth({ redirectIfUnauthenticated: false });
   const showToast = useToast();
   const [sidebarOpen, setSidebarOpen] = useAtom(sidebarOpenAtom);
+  const [sidebarCollapsed, setSidebarCollapsed] = useAtom(sidebarCollapsedAtom);
   const [simpleView, setSimpleView] = useAtom(simpleViewAtom);
+
+  const handleClose = () => {
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+      setSidebarOpen(false);
+    } else {
+      setSidebarCollapsed(true);
+    }
+  };
 
   const handleLogout = () => {
     showToast('로그아웃 되었습니다', 'auth', { position: 'center-bottom' });
@@ -158,8 +191,13 @@ export default function Sidebar({ active = 'products' }) {
   return (
     <>
       <Overlay $open={sidebarOpen} onClick={() => setSidebarOpen(false)} />
-      <SidebarContainer $open={sidebarOpen}>
-        <Logo>테이블 홈</Logo>
+      <SidebarContainer $open={sidebarOpen} $collapsed={sidebarCollapsed}>
+        <Logo>
+          <span>장유해신탕</span>
+          <CloseBtn onClick={handleClose} aria-label="네비게이션 닫기">
+            &times;
+          </CloseBtn>
+        </Logo>
         <MenuSection>
           {menuItems.map((item) => (
             <MenuItem

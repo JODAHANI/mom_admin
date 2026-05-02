@@ -24,8 +24,8 @@ const PageContainer = styled.div`
 `;
 
 const MainArea = styled.div`
-  margin-left: 240px;
-  padding-top: 60px;
+  margin-left: var(--sidebar-width, 240px);
+  transition: margin-left 0.25s ease;
   flex: 1;
 
   @media (max-width: 768px) {
@@ -41,58 +41,89 @@ const Content = styled.div`
   }
 `;
 
-const PageHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  gap: 12px;
-  flex-wrap: wrap;
-`;
-
-const PageTitle = styled.h2`
-  font-size: 20px;
-  font-weight: 700;
-  color: #191f28;
-  margin: 0;
-`;
-
 const StatsRow = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
+  display: flex;
+  background: white;
+  border-radius: 16px;
+  padding: 20px 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 
-  @media (max-width: 480px) {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+  @media (max-width: 600px) {
+    padding: 14px 6px;
+    border-radius: 14px;
   }
 `;
 
 const StatCard = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  border-left: 12px solid ${(p) => p.$color || '#3182F6'};
+  --accent: ${(p) => p.$color || '#3182F6'};
+  flex: 1;
+  min-width: 0;
+  padding: 0 18px;
+  position: relative;
 
-  @media (max-width: 480px) {
-    padding: 14px;
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 26px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  &:first-child::before {
+    display: none;
+  }
+
+  @media (max-width: 900px) {
+    padding: 0 12px;
+  }
+
+  @media (max-width: 600px) {
+    padding: 0 10px;
+
+    &::before {
+      width: 2px;
+      height: 20px;
+    }
   }
 `;
 
 const StatLabel = styled.div`
-  font-size: 13px;
+  font-size: 10px;
   color: #8b95a1;
-  margin-bottom: 6px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  @media (max-width: 600px) {
+    font-size: 9px;
+    letter-spacing: 0.7px;
+    margin-bottom: 6px;
+  }
 `;
 
 const StatValue = styled.div`
-  font-size: 24px;
-  font-weight: 700;
-  color: #191f28;
+  font-size: clamp(18px, 2.6vw, 32px);
+  font-weight: 800;
+  color: var(--accent, #191f28);
+  letter-spacing: -0.6px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
-  @media (max-width: 480px) {
+  @media (max-width: 600px) {
     font-size: 20px;
+    letter-spacing: -0.4px;
   }
 `;
 
@@ -423,11 +454,8 @@ export default function CallHistoryPage() {
     <PageContainer>
       <Sidebar active="call-history" />
       <MainArea>
-        <Header />
         <Content>
-          <PageHeader>
-            <PageTitle>호출 내역</PageTitle>
-          </PageHeader>
+          <Header title="호출 내역" />
 
           {!simpleView && (
             <StatsRow>

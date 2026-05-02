@@ -2,10 +2,16 @@ import { useState } from 'react';
 import Head from 'next/head';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createGlobalStyle } from 'styled-components';
+import { useAtomValue } from 'jotai';
 import { useWebSocketOrders } from '../hooks/useOrders';
 import { ToastProvider, useToast } from '../components/Toast';
+import { sidebarCollapsedAtom } from '../store/atoms';
 
 const GlobalStyle = createGlobalStyle`
+  :root {
+    --sidebar-width: ${(p) => (p.$collapsed ? '0px' : '240px')};
+  }
+
   *, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
@@ -67,6 +73,11 @@ function WebSocketProvider({ children }) {
   return children;
 }
 
+function ThemedGlobalStyle() {
+  const collapsed = useAtomValue(sidebarCollapsedAtom);
+  return <GlobalStyle $collapsed={collapsed} />;
+}
+
 export default function App({ Component, pageProps }) {
   const [queryClient] = useState(
     () =>
@@ -85,7 +96,7 @@ export default function App({ Component, pageProps }) {
       <Head>
         <title>장유해신탕 관리자</title>
       </Head>
-      <GlobalStyle />
+      <ThemedGlobalStyle />
       <ToastProvider>
         <WebSocketProvider>
           <Component {...pageProps} />

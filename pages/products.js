@@ -17,8 +17,8 @@ const PageContainer = styled.div`
 `;
 
 const MainArea = styled.div`
-  margin-left: 240px;
-  padding-top: 60px;
+  margin-left: var(--sidebar-width, 240px);
+  transition: margin-left 0.25s ease;
   flex: 1;
   min-height: 100vh;
 
@@ -152,8 +152,8 @@ export default function ProductsPage() {
     <PageContainer>
       <Sidebar active="products" />
       <MainArea>
-        <Header />
         <Content>
+          <Header title="상품 관리" />
           <TopBar>
             <SearchInput
               placeholder="상품명으로 검색"

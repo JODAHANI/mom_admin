@@ -17,8 +17,8 @@ const PageContainer = styled.div`
 `;
 
 const MainArea = styled.div`
-  margin-left: 240px;
-  padding-top: 60px;
+  margin-left: var(--sidebar-width, 240px);
+  transition: margin-left 0.25s ease;
   flex: 1;
 
   @media (max-width: 768px) {
@@ -32,13 +32,6 @@ const Content = styled.div`
   @media (max-width: 480px) {
     padding: 16px;
   }
-`;
-
-const PageTitle = styled.h2`
-  font-size: 20px;
-  font-weight: 700;
-  margin-bottom: 24px;
-  color: #1b1d1f;
 `;
 
 const Container = styled.div`
@@ -299,9 +292,8 @@ export default function AdminsPage() {
     <PageContainer>
       <Sidebar active="admins" />
       <MainArea>
-        <Header />
         <Content>
-          <PageTitle>계정 관리</PageTitle>
+          <Header title="계정 관리" />
           <Container>
             <FormCard>
               <FormTitle>새 관리자 추가</FormTitle>
