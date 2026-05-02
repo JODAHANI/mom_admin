@@ -374,6 +374,11 @@ const Modal = styled.div`
   max-height: 80vh;
   overflow-y: auto;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 `;
 
 const ModalHeader = styled.div`
@@ -601,6 +606,82 @@ const FloatingFooter = styled.div`
   flex-direction: column-reverse;
   gap: 8px;
 `;
+
+const SummaryCard = styled.div`
+  background: #F0F6FF;
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin: 4px 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+`;
+
+const SummaryHead = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+`;
+
+const SummaryLabel = styled.div`
+  font-size: 13px;
+  color: #1B6CE5;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+`;
+
+const SummaryMeta = styled.div`
+  font-size: 12px;
+  color: #5B8DEF;
+  font-weight: 600;
+`;
+
+const SummaryAmount = styled.div`
+  font-size: 28px;
+  font-weight: 800;
+  color: #1B6CE5;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+`;
+
+const ActionBar = styled.div`
+  display: flex;
+  gap: 8px;
+  margin: 0 0 16px;
+  flex-wrap: wrap;
+`;
+
+const ActionBtn = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border: 1px solid #E5E8EB;
+  border-radius: 999px;
+  background: white;
+  color: #1b1d1f;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover:not(:disabled) {
+    border-color: #3182F6;
+    color: #3182F6;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+`;
+
 
 const DeleteBtn = styled.button`
   flex: 1;
@@ -859,6 +940,23 @@ export default function TablesPage() {
     );
   };
 
+  const handlePrintReceipt = () => {
+    if (!selectedTable) return;
+    const orderIds = (selectedTable.allOrders || []).map((o) => o._id).filter(Boolean);
+    if (orderIds.length === 0) {
+      showToast('출력할 주문이 없습니다', 'error');
+      return;
+    }
+    const tableLabel = `${selectedTable.floor || 1}층 ${selectedTable.number}번`;
+    printSession.mutate({ orderIds, withQR: true }, {
+      onSuccess: () => showToast(`${tableLabel} 영수증 출력 완료`, 'success'),
+      onError: (err) => {
+        const msg = err?.response?.data?.message || '영수증 출력에 실패했습니다';
+        showToast(msg, 'error');
+      },
+    });
+  };
+
   const handleDeleteTable = () => {
     if (!selectedTable) return;
     if (window.confirm(`${selectedTable.floor}층 ${selectedTable.number}번 테이블을 삭제하시겠습니까?`)) {
@@ -883,7 +981,7 @@ export default function TablesPage() {
   };
 
   const getQrUrl = (table) => {
-    return `http://10.84.42.85:3001/table/${table.token}`;
+    return `http://192.0.0.2:3001/table/${table.token}`;
   };
 
   const handlePrintQrOne = (table) => {
@@ -1016,35 +1114,44 @@ export default function TablesPage() {
                 <ModalHeader>
                   <ModalTitle>
                     {selectedTable.floor}층 {selectedTable.number}번 테이블
-                    <span style={{ fontSize: 13, color: '#3182F6', fontWeight: 600, cursor: 'pointer', marginLeft: 12 }} onClick={() => { setSelectedTable(null); setQrTable(selectedTable); }}>QR코드</span>
                   </ModalTitle>
                   <CloseBtn onClick={() => setSelectedTable(null)}>&times;</CloseBtn>
                 </ModalHeader>
                 <ModalBody style={{ paddingBottom: 16 }}>
-                  {selectedTable.lastOrderTime && (
-                    <InfoRow>
-                      <InfoLabel>체류 시간</InfoLabel>
-                      <InfoValue>{getElapsedTime(selectedTable.lastOrderTime)}</InfoValue>
-                    </InfoRow>
-                  )}
-
-                  {(selectedTable.allOrders || []).length > 0 && (
-                    <TotalBox>
-                      <TotalLabel>결제 금액</TotalLabel>
-                      <TotalAmount>{getSessionTotal(selectedTable).toLocaleString()}원</TotalAmount>
-                    </TotalBox>
-                  )}
-
-                  <SectionTitleRow>
-                    <SectionTitleText>미완료 주문</SectionTitleText>
-                    <AddOrderBtn onClick={() => setOrderTable(selectedTable)}>
+                  <ActionBar>
+                    <ActionBtn onClick={() => { setSelectedTable(null); setQrTable(selectedTable); }}>
+                      QR코드
+                    </ActionBtn>
+                    <ActionBtn
+                      onClick={handlePrintReceipt}
+                      disabled={(selectedTable.allOrders || []).length === 0 || printSession.isPending}
+                    >
+                      🖨 영수증 출력
+                    </ActionBtn>
+                    <ActionBtn onClick={() => setOrderTable(selectedTable)} style={{ marginLeft: 'auto' }}>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="12" y1="5" x2="12" y2="19" />
                         <line x1="5" y1="12" x2="19" y2="12" />
                       </svg>
                       주문 추가
-                    </AddOrderBtn>
-                  </SectionTitleRow>
+                    </ActionBtn>
+                  </ActionBar>
+
+                  {(selectedTable.allOrders || []).length > 0 && (
+                    <SummaryCard>
+                      <SummaryHead>
+                        <SummaryLabel>결제 금액</SummaryLabel>
+                        {selectedTable.lastOrderTime && (
+                          <SummaryMeta>⏱ {getElapsedTime(selectedTable.lastOrderTime)}</SummaryMeta>
+                        )}
+                      </SummaryHead>
+                      <SummaryAmount>{getSessionTotal(selectedTable).toLocaleString()}원</SummaryAmount>
+                    </SummaryCard>
+                  )}
+
+                  <SectionTitle style={{ marginTop: 0, paddingTop: 0, borderTop: 'none' }}>
+                    미완료 주문
+                  </SectionTitle>
                   {(() => {
                     const incomplete = (selectedTable.allOrders || []).filter(o => o.status !== 'served' && o.status !== 'cancelled');
                     return incomplete.length === 0 ? (

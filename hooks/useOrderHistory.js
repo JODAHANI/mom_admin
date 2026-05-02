@@ -127,8 +127,11 @@ export function useOrderSessions(
 
 export function usePrintSession() {
   return useMutation({
-    mutationFn: async (orderIds) => {
-      const { data } = await api.post('/orders/print-session', { orderIds });
+    mutationFn: async (input) => {
+      const payload = Array.isArray(input)
+        ? { orderIds: input }
+        : { orderIds: input.orderIds, withQR: !!input.withQR };
+      const { data } = await api.post('/orders/print-session', payload);
       return data;
     },
   });

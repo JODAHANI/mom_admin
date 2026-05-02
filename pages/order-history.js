@@ -615,7 +615,7 @@ export default function OrderHistoryPage() {
       ? `${session.floor || 1}층 ${session.tableNumber}번`
       : `세션 ${session.id}`;
 
-    printSession.mutate(session.orderIds, {
+    printSession.mutate({ orderIds: session.orderIds, withQR: true }, {
       onSuccess: () => showToast(`${tableLabel} 영수증 출력 완료`, 'success'),
       onError: (err) => {
         const msg = err?.response?.data?.message || '영수증 출력에 실패했습니다';
