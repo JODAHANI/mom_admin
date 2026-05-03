@@ -695,13 +695,13 @@ const DeleteBtn = styled.button`
 
 const ClearBtn = styled.button`
   flex: 1;
-  padding: 12px;
+  padding: 16px;
   border: none;
   border-radius: 10px;
   background: #F44336;
   color: white;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   cursor: pointer;
 
   &:hover {
@@ -1075,8 +1075,8 @@ export default function TablesPage() {
               <Modal
                 onClick={(e) => e.stopPropagation()}
                 style={{
-                  height: '95vh',
-                  maxHeight: '95vh',
+                  height: '88vh',
+                  maxHeight: '88vh',
                   display: 'flex',
                   flexDirection: 'column',
                   overflow: 'hidden',
@@ -1097,7 +1097,7 @@ export default function TablesPage() {
                       onClick={handlePrintReceipt}
                       disabled={(selectedTable.allOrders || []).length === 0 || printSession.isPending}
                     >
-                      🖨 영수증 출력
+                      영수증 출력
                     </ActionBtn>
                     <ActionBtn onClick={() => setOrderTable(selectedTable)} style={{ marginLeft: 'auto' }}>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -1130,8 +1130,7 @@ export default function TablesPage() {
                     ) : (
                       incomplete.map((order) => (
                         <OrderItem key={order._id}>
-                          <OrderTop>
-                            <OrderId>#{(order._id || '').slice(-6).toUpperCase()}</OrderId>
+                          <OrderTop style={{ justifyContent: 'flex-end' }}>
                             <OrderBadge $status={order.status}>
                               {allStatusLabels[order.status] || order.status}
                             </OrderBadge>
@@ -1153,8 +1152,7 @@ export default function TablesPage() {
                     ) : (
                       completed.map((order) => (
                         <OrderItem key={order._id}>
-                          <OrderTop>
-                            <OrderId>#{(order._id || '').slice(-6).toUpperCase()}</OrderId>
+                          <OrderTop style={{ justifyContent: 'flex-end' }}>
                             <OrderBadge $status={order.status}>
                               {allStatusLabels[order.status] || order.status}
                             </OrderBadge>
@@ -1171,7 +1169,7 @@ export default function TablesPage() {
                 <FloatingFooter>
                   {(selectedTable.allOrders?.length > 0 || selectedTable.activeOrders?.length > 0) ? (
                     <ClearBtn onClick={handleAskClear} disabled={updateTable.isPending}>
-                      결제
+                      결제하기
                     </ClearBtn>
                   ) : (
                     <DeleteBtn onClick={handleDeleteTable}>삭제</DeleteBtn>

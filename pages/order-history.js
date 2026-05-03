@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { useState } from 'react';
 import styled from 'styled-components';
 import { useAtom } from 'jotai';
 import Sidebar from '../components/Sidebar';
@@ -283,7 +283,7 @@ const QuickBtn = styled.button`
   }
 `;
 
-/* 테이블 헤더 바 */
+/* 카운트 바 */
 const TableBar = styled.div`
   display: flex;
   justify-content: space-between;
@@ -303,52 +303,11 @@ const TotalCount = styled.div`
   }
 `;
 
-/* 테이블 */
-const TableWrapper = styled.div`
-  @media (max-width: 768px) {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    border-radius: 12px;
-  }
-`;
-
-const Table = styled.table`
-  width: 100%;
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  border-collapse: collapse;
-
-  @media (max-width: 768px) {
-    min-width: 700px;
-  }
-`;
-
-const Th = styled.th`
-  text-align: left;
-  padding: 16px 18px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #6B7684;
-  background: #F9FAFB;
-  border-bottom: 2px solid #E5E8EB;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-`;
-
-const Td = styled.td`
-  padding: 18px;
-  font-size: 14px;
-  color: #191f28;
-  border-bottom: 1px solid #EEF0F3;
-  vertical-align: middle;
-`;
-
 const StatusBadge = styled.span`
   display: inline-block;
-  padding: 5px 12px;
+  padding: 4px 10px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.02em;
   background: ${(p) => statusColors[p.$status]?.bg || '#e5e8eb'};
@@ -371,87 +330,189 @@ function getTableColor(id) {
   return TABLE_COLORS[h % TABLE_COLORS.length];
 }
 
-const TableCell = styled.div`
+/* 세션 카드 리스트 */
+const SessionList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+const SessionCard = styled.div`
+  background: white;
+  border-radius: 14px;
+  border: 1px solid #EEF0F3;
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    border-color: #DCE2EA;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+  }
+
+  ${(p) => p.$open && `
+    border-color: #BFD4FF;
+    box-shadow: 0 4px 18px rgba(49, 130, 246, 0.10);
+  `}
+`;
+
+const HeadRow = styled.div`
+  display: grid;
+  grid-template-columns: 4px 1fr;
+  cursor: pointer;
+`;
+
+const AccentBar = styled.div`
+  background: ${(p) => p.$color};
+`;
+
+const HeadBody = styled.div`
+  padding: 16px 20px 14px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  row-gap: 10px;
+  column-gap: 16px;
+  align-items: center;
+
+  @media (max-width: 600px) {
+    padding: 14px 16px 12px;
+  }
+`;
+
+const HeadTopRow = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
-  font-weight: 700;
-  font-size: 15px;
-  color: #1b1d1f;
+  flex-wrap: wrap;
 `;
 
-const TableDot = styled.span`
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: ${(p) => p.$color};
-  flex-shrink: 0;
-`;
-
-const MenuCell = styled.div`
-  max-width: 320px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: #4B5563;
-  font-size: 13.5px;
-`;
-
-const OrderCountCell = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #1b1d1f;
-`;
-
-const AmountCell = styled.div`
+const TableLabel = styled.div`
   font-size: 17px;
   font-weight: 800;
   color: #191f28;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.2px;
 `;
 
-const TimeCell = styled.div`
+const TimeText = styled.span`
   font-size: 12.5px;
   color: #8b95a1;
-  line-height: 1.5;
   font-variant-numeric: tabular-nums;
 `;
 
-const StaffCell = styled.div`
-  font-size: 13px;
-  font-weight: 600;
-  color: #1b1d1f;
-  line-height: 1.4;
-  word-break: keep-all;
-  overflow-wrap: anywhere;
-  max-width: 250px;
+const SoftDot = styled.span`
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #cbd2da;
+  display: inline-block;
 `;
 
+const HeadAmount = styled.div`
+  font-size: 22px;
+  font-weight: 800;
+  color: #191f28;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.4px;
+  text-align: right;
 
-const EmptyRow = styled.tr`
-  td {
-    text-align: center;
-    padding: 40px;
-    color: #8b95a1;
+  @media (max-width: 600px) {
+    grid-column: 1 / -1;
+    text-align: left;
+    font-size: 20px;
+  }
+`;
+
+const MenuSummary = styled.div`
+  grid-column: 1 / -1;
+  font-size: 13.5px;
+  color: #4B5563;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const FootRow = styled.div`
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+  padding-top: 10px;
+  border-top: 1px dashed #EEF0F3;
+`;
+
+const FootMeta = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+`;
+
+const MetaChip = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #F5F7FA;
+  font-size: 12px;
+  color: #4B5563;
+  font-weight: 600;
+`;
+
+const StaffChip = styled(MetaChip)`
+  background: #EEF4FF;
+  color: #1B6CE5;
+`;
+
+const CancelledChip = styled(MetaChip)`
+  background: #FFEFEF;
+  color: #DC2626;
+`;
+
+const FootActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const ExpandBtn = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid #E5E8EB;
+  border-radius: 8px;
+  background: white;
+  color: #4B5563;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s;
+
+  &:hover { border-color: #3182F6; color: #3182F6; }
+
+  & > .arrow {
+    display: inline-block;
+    transition: transform 0.15s;
+    transform: ${(p) => (p.$open ? 'rotate(90deg)' : 'rotate(0)')};
+    font-size: 14px;
+    line-height: 1;
   }
 `;
 
 const PrintBtn = styled.button`
-  padding: 8px 16px;
+  padding: 8px 14px;
   border: 1.5px solid #E5E8EB;
   border-radius: 8px;
   background: white;
   color: #3182F6;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s;
-  min-width: 72px;
 
   &:hover:not(:disabled) {
     background: #F2F8FF;
@@ -465,76 +526,110 @@ const PrintBtn = styled.button`
   }
 `;
 
-const SessionRow = styled.tr`
-  cursor: pointer;
-  transition: background 0.12s;
-  &:hover { background: #F9FAFB; }
-  ${(p) => p.$open && 'background: #F5F9FF;'}
-`;
-
-const ExpandIcon = styled.span`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  color: #8b95a1;
-  transform: ${(p) => (p.$open ? 'rotate(90deg)' : 'rotate(0)')};
-  transition: transform 0.15s;
-  font-size: 22px;
-`;
-
-const DetailRow = styled.tr`
+const Detail = styled.div`
+  padding: 12px 18px 16px 22px;
   background: #FAFBFC;
-  & > td {
-    font-size: 13px;
-    color: #4B5563;
-    padding: 14px 18px 14px 48px;
-    border-bottom: 1px solid #EEF0F3;
-    border-left: 3px solid ${(p) => p.$accent || '#D1D5DB'};
-  }
-`;
-
-const DetailGrid = styled.div`
-  display: grid;
-  grid-template-columns: 110px 80px 1fr 120px 70px 90px;
-  gap: 12px;
-  align-items: flex-start;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 100px 1fr 100px 60px 80px;
-    & > *:nth-child(2) { display: none; }
-  }
-`;
-
-const ItemList = styled.div`
+  border-top: 1px solid #EEF0F3;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  line-height: 1.5;
+  gap: 8px;
 `;
 
-const ItemLine = styled.div`
-  font-size: 13px;
-  color: #1b1d1f;
-  & > .price {
-    color: #8b95a1;
-    margin-left: 6px;
-    font-variant-numeric: tabular-nums;
+const OrderBox = styled.div`
+  background: white;
+  border-radius: 10px;
+  border: 1px solid #EEF0F3;
+  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: 96px 1fr auto;
+  gap: 14px;
+  align-items: flex-start;
+  border-left: 3px solid ${(p) => p.$accent || '#D1D5DB'};
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
+`;
+
+const OrderMeta = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 `;
 
 const OrderNo = styled.span`
   font-family: monospace;
   color: #8b95a1;
   font-size: 12px;
+  letter-spacing: 0.04em;
 `;
 
-const CancelledNote = styled.span`
-  color: #F44336;
-  font-size: 11px;
-  margin-left: 6px;
-  font-weight: 600;
+const OrderTime = styled.span`
+  font-size: 12px;
+  color: #8b95a1;
+  font-variant-numeric: tabular-nums;
+`;
+
+const OrderItems = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #1b1d1f;
+  min-width: 0;
+
+  & .row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  & .name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .qty {
+    color: #4B5563;
+    font-weight: 700;
+    margin-left: 4px;
+  }
+
+  & .price {
+    color: #8b95a1;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+  }
+`;
+
+const OrderRight = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+
+  @media (max-width: 600px) {
+    align-items: flex-start;
+  }
+`;
+
+const OrderStaffNote = styled.span`
+  font-size: 11.5px;
+  color: #8b95a1;
+  word-break: keep-all;
+`;
+
+const EmptyState = styled.div`
+  background: white;
+  border-radius: 14px;
+  border: 1px solid #EEF0F3;
+  padding: 60px 20px;
+  text-align: center;
+  color: #8b95a1;
+  font-size: 14px;
 `;
 
 /* 페이지네이션 */
@@ -919,71 +1014,35 @@ export default function OrderHistoryPage() {
               </TotalCount>
             </TableBar>
           )}
-          <TableWrapper>
-          <Table>
-            <thead>
-              <tr>
-                <Th style={{ width: 24 }}></Th>
-                <Th>테이블</Th>
-                <Th>메뉴</Th>
-                <Th>주문수</Th>
-                <Th>합계</Th>
-                <Th>상태</Th>
-                <Th style={{ width: 250 }}>전달자</Th>
-                <Th>시간</Th>
-                <Th>영수증</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <EmptyRow><td colSpan={9}>로딩 중...</td></EmptyRow>
-              ) : sessions.length === 0 ? (
-                <EmptyRow><td colSpan={9}>주문내역이 없습니다</td></EmptyRow>
-              ) : (
-                sessions.map((s) => {
-                  const isOpen = expandedId === s.id;
-                  const isPrinting = printingId === s.id;
-                  const tableLabel = s.tableNumber
-                    ? `${s.floor || 1}층 ${s.tableNumber}번`
-                    : '-';
-                  const dotColor = getTableColor(s.tableId);
-                  const staffNames = [
-                    ...new Set(
-                      (s.orders || [])
-                        .filter((o) => o.servedBy)
-                        .map((o) => o.servedBy.name || o.servedBy.email || '직원')
-                    ),
-                  ];
+          <SessionList>
+            {isLoading ? (
+              <EmptyState>로딩 중...</EmptyState>
+            ) : sessions.length === 0 ? (
+              <EmptyState>주문내역이 없습니다</EmptyState>
+            ) : (
+              sessions.map((s) => {
+                const isOpen = expandedId === s.id;
+                const isPrinting = printingId === s.id;
+                const tableLabel = s.tableNumber
+                  ? `${s.floor || 1}층 ${s.tableNumber}번`
+                  : '-';
+                const accent = getTableColor(s.tableId);
+                const staffNames = [
+                  ...new Set(
+                    (s.orders || [])
+                      .filter((o) => o.servedBy)
+                      .map((o) => o.servedBy.name || o.servedBy.email || '직원')
+                  ),
+                ];
+                const toggle = () => setExpandedId(isOpen ? null : s.id);
 
-                  return (
-                    <Fragment key={s.id}>
-                      <SessionRow $open={isOpen} onClick={() => setExpandedId(isOpen ? null : s.id)}>
-                        <Td style={{ paddingRight: 0 }}>
-                          <ExpandIcon $open={isOpen}>▸</ExpandIcon>
-                        </Td>
-                        <Td>
-                          <TableCell>
-                            <TableDot $color={dotColor} />
-                            {tableLabel}
-                          </TableCell>
-                        </Td>
-                        <Td>
-                          <MenuCell title={formatMenuSummary(s.items)}>
-                            {formatMenuSummary(s.items)}
-                          </MenuCell>
-                        </Td>
-                        <Td>
-                          <OrderCountCell>
-                            <span>{s.orderCount}건</span>
-                            {s.cancelledCount > 0 && (
-                              <CancelledNote style={{ margin: 0 }}>취소 {s.cancelledCount}</CancelledNote>
-                            )}
-                          </OrderCountCell>
-                        </Td>
-                        <Td>
-                          <AmountCell>{Number(s.totalPrice || 0).toLocaleString()}원</AmountCell>
-                        </Td>
-                        <Td>
+                return (
+                  <SessionCard key={s.id} $open={isOpen}>
+                    <HeadRow onClick={toggle}>
+                      <AccentBar $color={accent} />
+                      <HeadBody>
+                        <HeadTopRow>
+                          <TableLabel>{tableLabel}</TableLabel>
                           <StatusBadge
                             style={{
                               background: sessionStatusColors[s.status]?.bg || '#e5e8eb',
@@ -992,66 +1051,82 @@ export default function OrderHistoryPage() {
                           >
                             {sessionStatusLabels[s.status] || s.status}
                           </StatusBadge>
-                        </Td>
-                        <Td>
-                          <StaffCell>
-                            {staffNames.length === 0 ? '-' : staffNames.join(', ')}
-                          </StaffCell>
-                        </Td>
-                        <Td>
-                          <TimeCell>{formatSessionRange(s.startedAt, s.endedAt)}</TimeCell>
-                        </Td>
-                        <Td onClick={(e) => e.stopPropagation()}>
-                          <PrintBtn onClick={(e) => handlePrintSession(s, e)} disabled={isPrinting}>
-                            {isPrinting ? '출력중' : '영수증'}
-                          </PrintBtn>
-                        </Td>
-                      </SessionRow>
-                      {isOpen && (s.orders || []).map((o) => {
-                        const oid = o._id || o.id || '';
-                        const items = o.items || [];
-                        const totalQty = items.reduce((x, i) => x + (i.quantity || 0), 0);
-                        return (
-                          <DetailRow key={oid} $accent={dotColor}>
-                            <td colSpan={9}>
-                              <DetailGrid>
+                          <SoftDot />
+                          <TimeText>{formatSessionRange(s.startedAt, s.endedAt)}</TimeText>
+                        </HeadTopRow>
+                        <HeadAmount>{Number(s.totalPrice || 0).toLocaleString()}원</HeadAmount>
+                        <MenuSummary title={formatMenuSummary(s.items)}>
+                          {formatMenuSummary(s.items)}
+                        </MenuSummary>
+                        <FootRow>
+                          <FootMeta>
+                            <MetaChip>주문 {s.orderCount}건</MetaChip>
+                            {s.cancelledCount > 0 && (
+                              <CancelledChip>취소 {s.cancelledCount}건</CancelledChip>
+                            )}
+                            {staffNames.length > 0 && (
+                              <StaffChip>전달 · {staffNames.join(', ')}</StaffChip>
+                            )}
+                          </FootMeta>
+                          <FootActions onClick={(e) => e.stopPropagation()}>
+                            <ExpandBtn $open={isOpen} onClick={toggle}>
+                              {isOpen ? '주문 접기' : '주문 펼치기'}
+                              <span className="arrow">▸</span>
+                            </ExpandBtn>
+                            <PrintBtn onClick={(e) => handlePrintSession(s, e)} disabled={isPrinting}>
+                              {isPrinting ? '출력중' : '영수증'}
+                            </PrintBtn>
+                          </FootActions>
+                        </FootRow>
+                      </HeadBody>
+                    </HeadRow>
+                    {isOpen && (
+                      <Detail>
+                        {(s.orders || []).map((o) => {
+                          const oid = o._id || o.id || '';
+                          const items = o.items || [];
+                          return (
+                            <OrderBox key={oid} $accent={accent}>
+                              <OrderMeta>
                                 <OrderNo>#{String(oid).slice(-6).toUpperCase()}</OrderNo>
-                                <span style={{ color: '#8b95a1', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
-                                  {formatHM(o.createdAt)}
-                                </span>
-                                <ItemList>
-                                  {items.length === 0 ? (
-                                    <ItemLine>-</ItemLine>
-                                  ) : (
-                                    items.map((i, idx) => (
-                                      <ItemLine key={idx}>
-                                        {i.name} <strong>x{i.quantity}</strong>
-                                        <span className="price">{Number(i.price || 0).toLocaleString()}원</span>
-                                      </ItemLine>
-                                    ))
-                                  )}
-                                </ItemList>
-                                <span style={{ fontSize: 12, color: '#8b95a1', wordBreak: 'keep-all' }}>
-                                  {o.status === 'served' && o.servedBy
-                                    ? `전달 : ${o.servedBy.name || o.servedBy.email || '직원'}`
-                                    : ''}
-                                </span>
-                                <span style={{ color: '#8b95a1', fontSize: 12 }}>{totalQty}개</span>
+                                <OrderTime>{formatHM(o.createdAt)}</OrderTime>
+                              </OrderMeta>
+                              <OrderItems>
+                                {items.length === 0 ? (
+                                  <div className="row"><span className="name">-</span></div>
+                                ) : (
+                                  items.map((i, idx) => (
+                                    <div className="row" key={idx}>
+                                      <span className="name">
+                                        {i.name}<span className="qty">x{i.quantity}</span>
+                                      </span>
+                                      <span className="price">
+                                        {Number((i.price || 0) * (i.quantity || 0)).toLocaleString()}원
+                                      </span>
+                                    </div>
+                                  ))
+                                )}
+                              </OrderItems>
+                              <OrderRight>
                                 <StatusBadge $status={o.status}>
                                   {statusLabels[o.status] || o.status}
                                 </StatusBadge>
-                              </DetailGrid>
-                            </td>
-                          </DetailRow>
-                        );
-                      })}
-                    </Fragment>
-                  );
-                })
-              )}
-            </tbody>
-          </Table>
-          </TableWrapper>
+                                {o.status === 'served' && o.servedBy && (
+                                  <OrderStaffNote>
+                                    {o.servedBy.name || o.servedBy.email || '직원'}
+                                  </OrderStaffNote>
+                                )}
+                              </OrderRight>
+                            </OrderBox>
+                          );
+                        })}
+                      </Detail>
+                    )}
+                  </SessionCard>
+                );
+              })
+            )}
+          </SessionList>
 
           {/* 페이지네이션 */}
           {totalPages > 1 && (

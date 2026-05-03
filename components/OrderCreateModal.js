@@ -20,8 +20,8 @@ const Modal = styled.div`
   border-radius: 16px;
   width: 960px;
   max-width: calc(100vw - 24px);
-  height: 95vh;
-  max-height: 95vh;
+  height: 88vh;
+  max-height: 88vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -138,12 +138,12 @@ const Grid = styled.div`
   overflow-y: auto;
   padding: 16px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 12px;
   align-content: start;
 
   @media (max-width: 480px) {
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 10px;
   }
 `;
@@ -155,6 +155,7 @@ const ProductCard = styled.button`
   border-radius: 12px;
   padding: 0;
   overflow: hidden;
+  aspect-ratio: 1 / 1;
   cursor: ${(p) => (p.$disabled ? 'not-allowed' : 'pointer')};
   opacity: ${(p) => (p.$disabled ? 0.5 : 1)};
   text-align: left;
@@ -182,23 +183,28 @@ const SoldOutOverlay = styled.div`
 `;
 
 const ProductInfo = styled.div`
-  padding: 10px 12px;
+  width: 100%;
+  height: 100%;
+  padding: 14px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
 `;
 
 const ProductName = styled.div`
-  font-size: 13px;
+  font-size: 17px;
   font-weight: 700;
   color: #191f28;
   line-height: 1.3;
-  margin-bottom: 4px;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 `;
 
 const ProductPrice = styled.div`
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: #3182f6;
   font-variant-numeric: tabular-nums;
@@ -246,7 +252,7 @@ const CartEmpty = styled.div`
 `;
 
 const CartItem = styled.div`
-  padding: 10px 16px;
+  padding: 14px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -281,29 +287,34 @@ const CartPrice = styled.div`
 const QtyBox = styled.div`
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   background: #f5f6f8;
-  border-radius: 8px;
-  padding: 2px;
+  border-radius: 12px;
+  padding: 4px;
 `;
 
 const QtyBtn = styled.button`
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
   background: white;
   border: none;
-  font-size: 15px;
+  font-size: 22px;
   font-weight: 700;
   color: #191f28;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  touch-action: manipulation;
 
   &:hover {
     background: #3182f6;
     color: white;
+  }
+
+  &:active {
+    transform: scale(0.94);
   }
 
   &:disabled {
@@ -315,9 +326,9 @@ const QtyBtn = styled.button`
 `;
 
 const QtyNum = styled.div`
-  min-width: 22px;
+  min-width: 32px;
   text-align: center;
-  font-size: 13px;
+  font-size: 17px;
   font-weight: 700;
   color: #191f28;
   font-variant-numeric: tabular-nums;
