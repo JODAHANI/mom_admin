@@ -173,7 +173,8 @@ export default function ProductForm({ initialData, onSubmit, onCancel, loading }
     image: '',
     categoryIds: [],
     badges: [],
-    tableVisible: true,
+    showOnTable: true,
+    showOnAdminOrder: true,
   });
 
   useEffect(() => {
@@ -186,7 +187,8 @@ export default function ProductForm({ initialData, onSubmit, onCancel, loading }
         image: initialData.image || '',
         categoryIds: ids,
         badges: initialData.badges || [],
-        tableVisible: initialData.tableVisible !== false,
+        showOnTable: initialData.showOnTable !== false,
+        showOnAdminOrder: initialData.showOnAdminOrder !== false,
       });
     }
   }, [initialData]);
@@ -331,10 +333,18 @@ export default function ProductForm({ initialData, onSubmit, onCancel, loading }
       </FieldGroup>
 
       <ToggleField>
-        <ToggleLabel>테이블주문 노출</ToggleLabel>
+        <ToggleLabel>고객에게 노출</ToggleLabel>
         <Toggle
-          checked={form.tableVisible}
-          onChange={(v) => handleChange('tableVisible', v)}
+          checked={form.showOnTable}
+          onChange={(v) => handleChange('showOnTable', v)}
+        />
+      </ToggleField>
+
+      <ToggleField>
+        <ToggleLabel>관리자 주문에 노출</ToggleLabel>
+        <Toggle
+          checked={form.showOnAdminOrder}
+          onChange={(v) => handleChange('showOnAdminOrder', v)}
         />
       </ToggleField>
 

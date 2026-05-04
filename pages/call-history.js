@@ -198,10 +198,18 @@ const QuickBtn = styled.button`
   }
 `;
 
+const TableBar = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
 const TotalCount = styled.div`
   font-size: 13px;
   color: #8b95a1;
-  margin-bottom: 12px;
 
   strong {
     color: #191f28;
@@ -209,51 +217,11 @@ const TotalCount = styled.div`
   }
 `;
 
-const TableWrapper = styled.div`
-  @media (max-width: 768px) {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    border-radius: 12px;
-  }
-`;
-
-const Table = styled.table`
-  width: 100%;
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  border-collapse: collapse;
-
-  @media (max-width: 768px) {
-    min-width: 600px;
-  }
-`;
-
-const Th = styled.th`
-  text-align: left;
-  padding: 16px 18px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #6B7684;
-  background: #F9FAFB;
-  border-bottom: 2px solid #E5E8EB;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-`;
-
-const Td = styled.td`
-  padding: 18px;
-  font-size: 14px;
-  color: #191f28;
-  border-bottom: 1px solid #EEF0F3;
-  vertical-align: middle;
-`;
-
 const StatusBadge = styled.span`
   display: inline-block;
-  padding: 5px 12px;
+  padding: 4px 10px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.02em;
   background: ${(p) => statusColors[p.$status]?.bg || '#e5e8eb'};
@@ -276,36 +244,125 @@ function getTableColor(id) {
   return TABLE_COLORS[h % TABLE_COLORS.length];
 }
 
-const TableCell = styled.div`
+const CallList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+const CallCard = styled.div`
+  background: white;
+  border-radius: 14px;
+  border: 1px solid #EEF0F3;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 4px 1fr;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    border-color: #DCE2EA;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+  }
+`;
+
+const AccentBar = styled.div`
+  background: ${(p) => p.$color};
+`;
+
+const CardBody = styled.div`
+  padding: 16px 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  @media (max-width: 600px) {
+    padding: 14px 16px 12px;
+  }
+`;
+
+const HeadTopRow = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
-  font-weight: 700;
-  font-size: 15px;
-  color: #1b1d1f;
+  flex-wrap: wrap;
 `;
 
-const TableDot = styled.span`
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: ${(p) => p.$color};
-  flex-shrink: 0;
+const TableLabel = styled.div`
+  font-size: 17px;
+  font-weight: 800;
+  color: #191f28;
+  letter-spacing: -0.2px;
 `;
 
-const TimeCell = styled.div`
-  font-size: 13.5px;
-  color: #4B5563;
+const TimeText = styled.span`
+  font-size: 12.5px;
+  color: #8b95a1;
   font-variant-numeric: tabular-nums;
 `;
 
-const EmptyRow = styled.tr`
-  td {
-    text-align: center;
-    padding: 40px;
-    color: #8b95a1;
-  }
+const SoftDot = styled.span`
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #cbd2da;
+  display: inline-block;
+`;
+
+const FootRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+  padding-top: 10px;
+  border-top: 1px dashed #EEF0F3;
+`;
+
+const FootActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+`;
+
+const FootMeta = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+`;
+
+const MetaChip = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #F5F7FA;
+  font-size: 12px;
+  color: #4B5563;
+  font-weight: 600;
+`;
+
+const StaffChip = styled(MetaChip)`
+  background: #EEF4FF;
+  color: #1B6CE5;
+`;
+
+const ElapsedChip = styled(MetaChip)`
+  background: #FFF7E6;
+  color: #B45309;
+`;
+
+const EmptyState = styled.div`
+  background: white;
+  border-radius: 14px;
+  border: 1px solid #EEF0F3;
+  padding: 60px 20px;
+  text-align: center;
+  color: #8b95a1;
+  font-size: 14px;
 `;
 
 const ResolveBtn = styled.button`
@@ -510,54 +567,53 @@ export default function CallHistoryPage() {
           )}
 
           {!simpleView && (
-            <TotalCount>총 <strong>{total.toLocaleString()}</strong>건</TotalCount>
+            <TableBar>
+              <TotalCount>총 <strong>{total.toLocaleString()}</strong>건</TotalCount>
+            </TableBar>
           )}
 
-          <TableWrapper>
-            <Table>
-              <thead>
-                <tr>
-                  <Th>테이블</Th>
-                  <Th>호출시간</Th>
-                  <Th>상태</Th>
-                  <Th>처리자</Th>
-                  <Th>처리시간</Th>
-                  <Th>소요시간</Th>
-                  <Th>작업</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {isLoading ? (
-                  <EmptyRow><td colSpan={7}>로딩 중...</td></EmptyRow>
-                ) : calls.length === 0 ? (
-                  <EmptyRow><td colSpan={7}>호출 내역이 없습니다</td></EmptyRow>
-                ) : (
-                  calls.map((c) => {
-                    const isResolving = resolvingId === c._id;
-                    return (
-                      <tr key={c._id}>
-                        <Td>
-                          <TableCell>
-                            <TableDot $color={getTableColor(c.tableId)} />
-                            {c.tableNumber ? `${c.floor || 1}층 ${c.tableNumber}번` : '-'}
-                          </TableCell>
-                        </Td>
-                        <Td><TimeCell>{formatDateTime(c.createdAt)}</TimeCell></Td>
-                        <Td>
-                          <StatusBadge $status={c.status}>
-                            {statusLabels[c.status] || c.status}
-                          </StatusBadge>
-                        </Td>
-                        <Td>
-                          {c.resolvedBy?.name || (c.status === 'resolved' ? '-' : '')}
-                        </Td>
-                        <Td>
-                          <TimeCell>{c.resolvedAt ? formatDateTime(c.resolvedAt) : '-'}</TimeCell>
-                        </Td>
-                        <Td>
-                          <TimeCell>{c.resolvedAt ? elapsed(c.createdAt, c.resolvedAt) : '-'}</TimeCell>
-                        </Td>
-                        <Td>
+          <CallList>
+            {isLoading ? (
+              <EmptyState>로딩 중...</EmptyState>
+            ) : calls.length === 0 ? (
+              <EmptyState>호출 내역이 없습니다</EmptyState>
+            ) : (
+              calls.map((c) => {
+                const isResolving = resolvingId === c._id;
+                const tableLabel = c.tableNumber
+                  ? `${c.floor || 1}층 ${c.tableNumber}번`
+                  : '-';
+                const accent = getTableColor(c.tableId);
+                const staffName = c.resolvedBy?.name || c.resolvedBy?.email;
+
+                return (
+                  <CallCard key={c._id}>
+                    <AccentBar $color={accent} />
+                    <CardBody>
+                      <HeadTopRow>
+                        <TableLabel>{tableLabel}</TableLabel>
+                        <StatusBadge $status={c.status}>
+                          {statusLabels[c.status] || c.status}
+                        </StatusBadge>
+                        <SoftDot />
+                        <TimeText>{formatDateTime(c.createdAt)}</TimeText>
+                      </HeadTopRow>
+                      <FootRow>
+                        <FootMeta>
+                          {c.resolvedAt && (
+                            <MetaChip>처리 {formatDateTime(c.resolvedAt)}</MetaChip>
+                          )}
+                          {c.resolvedAt && (
+                            <ElapsedChip>소요 {elapsed(c.createdAt, c.resolvedAt)}</ElapsedChip>
+                          )}
+                          {staffName && (
+                            <StaffChip>처리 · {staffName}</StaffChip>
+                          )}
+                          {!c.resolvedAt && c.status === 'pending' && (
+                            <MetaChip>처리 대기중</MetaChip>
+                          )}
+                        </FootMeta>
+                        <FootActions>
                           {c.status === 'pending' ? (
                             <ResolveBtn onClick={() => handleResolve(c)} disabled={isResolving}>
                               {isResolving ? '처리중...' : '처리완료'}
@@ -565,14 +621,14 @@ export default function CallHistoryPage() {
                           ) : (
                             <span style={{ color: '#d1d5db', fontSize: 13 }}>—</span>
                           )}
-                        </Td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </Table>
-          </TableWrapper>
+                        </FootActions>
+                      </FootRow>
+                    </CardBody>
+                  </CallCard>
+                );
+              })
+            )}
+          </CallList>
 
           {totalPages > 1 && (
             <Pagination>

@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 import { useRouter } from 'next/router';
 import Toggle from './Toggle';
-import { useToggleSoldOut, useToggleChannel } from '../hooks/useProducts';
+import { useToggleSoldOut } from '../hooks/useProducts';
 
 const Card = styled.div`
   background: white;
@@ -131,7 +131,6 @@ const badgeStyles = {
 export default function ProductCard({ product, onMoveUp, onMoveDown, isFirst, isLast }) {
   const router = useRouter();
   const toggleSoldOut = useToggleSoldOut();
-  const toggleChannel = useToggleChannel();
 
   const handleCardClick = () => {
     router.push(`/products/${product._id || product.id}`);
@@ -169,17 +168,6 @@ export default function ProductCard({ product, onMoveUp, onMoveDown, isFirst, is
             onChange={() => toggleSoldOut.mutate(product._id || product.id)}
             size="sm"
             color="#FF3B30"
-          />
-          <Toggle
-            label="테이블주문"
-            checked={product.tableVisible !== false}
-            onChange={() =>
-              toggleChannel.mutate({
-                id: product._id || product.id,
-                channel: 'table',
-              })
-            }
-            size="sm"
           />
         </ToggleRow>
         {onMoveUp && onMoveDown && (

@@ -403,6 +403,7 @@ export default function OrderCreateModal({ table, onClose }) {
     const list = Array.isArray(products) ? products : products?.data || [];
     return list.filter((p) => {
       if (p.isActive === false) return false;
+      if (p.showOnAdminOrder === false) return false;
       if (categoryId !== 'all') {
         const ids = (p.categoryIds || []).map((c) => (typeof c === 'object' ? c._id : c));
         if (!ids.includes(categoryId)) return false;
