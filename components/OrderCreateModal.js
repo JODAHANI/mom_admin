@@ -27,6 +27,16 @@ const Modal = styled.div`
   overflow: hidden;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
 
+  @media (min-width: 1280px) {
+    width: 1120px;
+    height: 84vh;
+    max-height: 84vh;
+  }
+
+  @media (min-width: 1600px) {
+    width: 1280px;
+  }
+
   @media (max-width: 768px) {
     width: 100%;
     height: 100vh;
@@ -77,6 +87,7 @@ const Body = styled.div`
 const LeftPane = styled.div`
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   border-right: 1px solid #e5e8eb;
@@ -138,9 +149,21 @@ const Grid = styled.div`
   overflow-y: auto;
   padding: 16px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 12px;
   align-content: start;
+
+  @media (min-width: 1024px) {
+    padding: 18px;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+
+  @media (min-width: 1440px) {
+    padding: 22px;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
 
   @media (max-width: 480px) {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -155,11 +178,15 @@ const ProductCard = styled.button`
   border-radius: 12px;
   padding: 0;
   overflow: hidden;
-  aspect-ratio: 1 / 1;
+  min-height: 92px;
   cursor: ${(p) => (p.$disabled ? 'not-allowed' : 'pointer')};
   opacity: ${(p) => (p.$disabled ? 0.5 : 1)};
   text-align: left;
   transition: transform 0.1s, box-shadow 0.1s, border-color 0.1s;
+
+  @media (min-width: 1024px) {
+    min-height: 104px;
+  }
 
   &:hover {
     ${(p) => !p.$disabled && 'border-color: #3182f6; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.06);'}
@@ -185,11 +212,10 @@ const SoldOutOverlay = styled.div`
 const ProductInfo = styled.div`
   width: 100%;
   height: 100%;
-  padding: 14px 14px 16px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
 `;
 
 const ProductName = styled.div`
@@ -215,9 +241,20 @@ const CartPane = styled.div`
   background: white;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+
+  @media (min-width: 1280px) {
+    width: 380px;
+  }
+
+  @media (min-width: 1600px) {
+    width: 420px;
+  }
 
   @media (max-width: 768px) {
     width: 100%;
+    flex: 0 0 auto;
+    min-height: 220px;
     max-height: 45vh;
   }
 `;

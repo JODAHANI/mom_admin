@@ -341,7 +341,7 @@ export default function ProductForm({ initialData, onSubmit, onCancel, loading }
       </ToggleField>
 
       <ToggleField>
-        <ToggleLabel>관리자 주문에 노출</ToggleLabel>
+        <ToggleLabel>관리자 주문</ToggleLabel>
         <Toggle
           checked={form.showOnAdminOrder}
           onChange={(v) => handleChange('showOnAdminOrder', v)}

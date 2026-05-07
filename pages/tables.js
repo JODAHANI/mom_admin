@@ -481,6 +481,7 @@ const OrderTop = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   margin-bottom: 6px;
 `;
 
@@ -491,6 +492,7 @@ const OrderId = styled.span`
 `;
 
 const OrderBadge = styled.span`
+  flex-shrink: 0;
   padding: 2px 8px;
   border-radius: 999px;
   font-size: 11px;
@@ -500,9 +502,11 @@ const OrderBadge = styled.span`
 `;
 
 const OrderMenus = styled.div`
+  flex: 1;
+  min-width: 0;
   font-size: 14px;
   color: #333;
-  margin-bottom: 4px;
+  word-break: break-word;
 `;
 
 const OrderPrice = styled.div`
@@ -598,6 +602,108 @@ const FloatingFooter = styled.div`
   display: flex;
   flex-direction: column-reverse;
   gap: 8px;
+`;
+
+/* 테이블 상세 모달 - 웹/태블릿 반응형 */
+const DetailModal = styled.div`
+  background: white;
+  border-radius: 16px;
+  width: 480px;
+  max-width: calc(100vw - 32px);
+  height: 88vh;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+
+  @media (min-width: 1024px) {
+    width: 920px;
+    height: 84vh;
+    max-height: 84vh;
+  }
+
+  @media (min-width: 1440px) {
+    width: 1040px;
+  }
+`;
+
+const DetailBody = styled.div`
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar { display: none; }
+
+  @media (min-width: 1024px) {
+    flex-direction: row;
+    overflow: hidden;
+  }
+`;
+
+const DetailSidePane = styled.div`
+  padding: 24px 24px 0;
+  display: flex;
+  flex-direction: column;
+
+  @media (min-width: 1024px) {
+    order: 2;
+    flex: 0 0 340px;
+    padding: 24px;
+    border-left: 1px solid #f2f3f5;
+    background: #FAFBFC;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    &::-webkit-scrollbar { display: none; }
+  }
+
+  @media (min-width: 1440px) {
+    flex: 0 0 380px;
+  }
+`;
+
+const DetailMainPane = styled.div`
+  padding: 0 24px 24px;
+
+  @media (min-width: 1024px) {
+    order: 1;
+    flex: 1;
+    min-width: 0;
+    padding: 24px 28px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    &::-webkit-scrollbar { display: none; }
+  }
+`;
+
+const DesktopFooter = styled.div`
+  display: none;
+
+  @media (min-width: 1024px) {
+    display: flex;
+    flex-direction: column;
+    margin-top: auto;
+    padding-top: 16px;
+  }
+`;
+
+const TabletFooter = styled.div`
+  padding: 16px 24px;
+  background: white;
+  border-top: 1px solid #E5E8EB;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+
+  @media (min-width: 1024px) {
+    display: none;
+  }
 `;
 
 const SummaryCard = styled.div`
@@ -751,12 +857,29 @@ const QrTableLabel = styled.div`
   color: #191f28;
 `;
 
-const QrUrl = styled.div`
+const QrUrl = styled.button`
   font-size: 12px;
   color: #8b95a1;
   word-break: break-all;
   text-align: center;
   max-width: 320px;
+  background: none;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+
+  &:hover {
+    background: #F5F6F8;
+    color: #3182F6;
+  }
+
+  @media print {
+    background: none !important;
+    color: #8b95a1 !important;
+  }
 `;
 
 const QrActions = styled.div`
@@ -968,6 +1091,26 @@ export default function TablesPage() {
     return `https://client-tau-seven-68.vercel.app/table/${table.token}`;
   };
 
+  const handleCopyQrUrl = async (url) => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      showToast('링크가 복사되었습니다', 'success');
+    } catch {
+      showToast('복사에 실패했습니다', 'error');
+    }
+  };
+
   const handlePrintQrOne = (table) => {
     if (!table || printTableQR.isPending) return;
     const label = `${table.floor || 1}층 ${table.number}번`;
@@ -1070,114 +1213,111 @@ export default function TablesPage() {
           )}
 
           {/* 테이블 상세 모달 */}
-          {selectedTable && (
-            <Overlay onClick={() => setSelectedTable(null)}>
-              <Modal
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                  height: '88vh',
-                  maxHeight: '88vh',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  overflow: 'hidden',
-                }}
-              >
-                <ModalHeader>
-                  <ModalTitle>
-                    {selectedTable.floor}층 {selectedTable.number}번 테이블
-                  </ModalTitle>
-                  <CloseBtn onClick={() => setSelectedTable(null)}>&times;</CloseBtn>
-                </ModalHeader>
-                <ModalBody style={{ paddingBottom: 16, flex: 1, overflowY: 'auto', minHeight: 0 }}>
-                  <ActionBar>
-                    <ActionBtn onClick={() => { setSelectedTable(null); setQrTable(selectedTable); }}>
-                      QR코드
-                    </ActionBtn>
-                    <ActionBtn
-                      onClick={handlePrintReceipt}
-                      disabled={(selectedTable.allOrders || []).length === 0 || printSession.isPending}
-                    >
-                      영수증 출력
-                    </ActionBtn>
-                    <ActionBtn onClick={() => setOrderTable(selectedTable)} style={{ marginLeft: 'auto' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                      </svg>
-                      주문 추가
-                    </ActionBtn>
-                  </ActionBar>
+          {selectedTable && (() => {
+            const incomplete = (selectedTable.allOrders || []).filter(o => o.status !== 'served' && o.status !== 'cancelled');
+            const completed = (selectedTable.allOrders || []).filter(o => o.status === 'served');
+            const hasOrders = (selectedTable.allOrders?.length > 0 || selectedTable.activeOrders?.length > 0);
+            const footerBtn = hasOrders ? (
+              <ClearBtn onClick={handleAskClear} disabled={updateTable.isPending}>
+                결제하기
+              </ClearBtn>
+            ) : (
+              <DeleteBtn onClick={handleDeleteTable}>삭제</DeleteBtn>
+            );
 
-                  {(selectedTable.allOrders || []).length > 0 && (
-                    <SummaryCard>
-                      <SummaryHead>
-                        <SummaryLabel>결제 금액</SummaryLabel>
-                        {selectedTable.lastOrderTime && (
-                          <SummaryMeta>⏱ {getElapsedTime(selectedTable.lastOrderTime)}</SummaryMeta>
-                        )}
-                      </SummaryHead>
-                      <SummaryAmount>{getSessionTotal(selectedTable).toLocaleString()}원</SummaryAmount>
-                    </SummaryCard>
-                  )}
+            return (
+              <Overlay onClick={() => setSelectedTable(null)}>
+                <DetailModal onClick={(e) => e.stopPropagation()}>
+                  <ModalHeader>
+                    <ModalTitle>
+                      {selectedTable.floor}층 {selectedTable.number}번 테이블
+                    </ModalTitle>
+                    <CloseBtn onClick={() => setSelectedTable(null)}>&times;</CloseBtn>
+                  </ModalHeader>
+                  <DetailBody>
+                    <DetailSidePane>
+                      <ActionBar>
+                        <ActionBtn onClick={() => { setSelectedTable(null); setQrTable(selectedTable); }}>
+                          QR코드
+                        </ActionBtn>
+                        <ActionBtn
+                          onClick={handlePrintReceipt}
+                          disabled={(selectedTable.allOrders || []).length === 0 || printSession.isPending}
+                        >
+                          영수증 출력
+                        </ActionBtn>
+                        <ActionBtn onClick={() => setOrderTable(selectedTable)} style={{ marginLeft: 'auto' }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                          </svg>
+                          주문 추가
+                        </ActionBtn>
+                      </ActionBar>
 
-                  <SectionTitle style={{ marginTop: 0, paddingTop: 0, borderTop: 'none' }}>
-                    미완료 주문
-                  </SectionTitle>
-                  {(() => {
-                    const incomplete = (selectedTable.allOrders || []).filter(o => o.status !== 'served' && o.status !== 'cancelled');
-                    return incomplete.length === 0 ? (
-                      <EmptyOrders>미완료 주문이 없습니다</EmptyOrders>
-                    ) : (
-                      incomplete.map((order) => (
-                        <OrderItem key={order._id}>
-                          <OrderTop style={{ justifyContent: 'flex-end' }}>
-                            <OrderBadge $status={order.status}>
-                              {allStatusLabels[order.status] || order.status}
-                            </OrderBadge>
-                          </OrderTop>
-                          <OrderMenus>
-                            {(order.items || []).map((i) => `${i.name} x${i.quantity}`).join(', ')}
-                          </OrderMenus>
-                          <OrderPrice>{Number(order.totalPrice || 0).toLocaleString()}원</OrderPrice>
-                        </OrderItem>
-                      ))
-                    );
-                  })()}
+                      {(selectedTable.allOrders || []).length > 0 && (
+                        <SummaryCard>
+                          <SummaryHead>
+                            <SummaryLabel>결제 금액</SummaryLabel>
+                            {selectedTable.lastOrderTime && (
+                              <SummaryMeta>⏱ {getElapsedTime(selectedTable.lastOrderTime)}</SummaryMeta>
+                            )}
+                          </SummaryHead>
+                          <SummaryAmount>{getSessionTotal(selectedTable).toLocaleString()}원</SummaryAmount>
+                        </SummaryCard>
+                      )}
 
-                  <SectionTitle>완료된 주문</SectionTitle>
-                  {(() => {
-                    const completed = (selectedTable.allOrders || []).filter(o => o.status === 'served');
-                    return completed.length === 0 ? (
-                      <EmptyOrders>완료된 주문이 없습니다</EmptyOrders>
-                    ) : (
-                      completed.map((order) => (
-                        <OrderItem key={order._id}>
-                          <OrderTop style={{ justifyContent: 'flex-end' }}>
-                            <OrderBadge $status={order.status}>
-                              {allStatusLabels[order.status] || order.status}
-                            </OrderBadge>
-                          </OrderTop>
-                          <OrderMenus>
-                            {(order.items || []).map((i) => `${i.name} x${i.quantity}`).join(', ')}
-                          </OrderMenus>
-                          <OrderPrice>{Number(order.totalPrice || 0).toLocaleString()}원</OrderPrice>
-                        </OrderItem>
-                      ))
-                    );
-                  })()}
-                </ModalBody>
-                <FloatingFooter>
-                  {(selectedTable.allOrders?.length > 0 || selectedTable.activeOrders?.length > 0) ? (
-                    <ClearBtn onClick={handleAskClear} disabled={updateTable.isPending}>
-                      결제하기
-                    </ClearBtn>
-                  ) : (
-                    <DeleteBtn onClick={handleDeleteTable}>삭제</DeleteBtn>
-                  )}
-                </FloatingFooter>
-              </Modal>
-            </Overlay>
-          )}
+                      <DesktopFooter>{footerBtn}</DesktopFooter>
+                    </DetailSidePane>
+
+                    <DetailMainPane>
+                      <SectionTitle style={{ marginTop: 0, paddingTop: 0, borderTop: 'none' }}>
+                        미완료 주문
+                      </SectionTitle>
+                      {incomplete.length === 0 ? (
+                        <EmptyOrders>미완료 주문이 없습니다</EmptyOrders>
+                      ) : (
+                        incomplete.map((order) => (
+                          <OrderItem key={order._id}>
+                            <OrderTop>
+                              <OrderMenus>
+                                {(order.items || []).map((i) => `${i.name} x${i.quantity}`).join(', ')}
+                              </OrderMenus>
+                              <OrderBadge $status={order.status}>
+                                {allStatusLabels[order.status] || order.status}
+                              </OrderBadge>
+                            </OrderTop>
+                            <OrderPrice>{Number(order.totalPrice || 0).toLocaleString()}원</OrderPrice>
+                          </OrderItem>
+                        ))
+                      )}
+
+                      <SectionTitle>완료된 주문</SectionTitle>
+                      {completed.length === 0 ? (
+                        <EmptyOrders>완료된 주문이 없습니다</EmptyOrders>
+                      ) : (
+                        completed.map((order) => (
+                          <OrderItem key={order._id}>
+                            <OrderTop>
+                              <OrderMenus>
+                                {(order.items || []).map((i) => `${i.name} x${i.quantity}`).join(', ')}
+                              </OrderMenus>
+                              <OrderBadge $status={order.status}>
+                                {allStatusLabels[order.status] || order.status}
+                              </OrderBadge>
+                            </OrderTop>
+                            <OrderPrice>{Number(order.totalPrice || 0).toLocaleString()}원</OrderPrice>
+                          </OrderItem>
+                        ))
+                      )}
+                    </DetailMainPane>
+                  </DetailBody>
+
+                  <TabletFooter>{footerBtn}</TabletFooter>
+                </DetailModal>
+              </Overlay>
+            );
+          })()}
           {/* 테이블 비우기 확인 모달 */}
           {confirmClearTable && (
             <Overlay onClick={() => !updateTable.isPending && setConfirmClearTable(null)}>
@@ -1257,7 +1397,13 @@ export default function TablesPage() {
                     <QrPrintCard>
                       <QrPrintLabel>{qrTable.floor}층 {qrTable.number}번 테이블</QrPrintLabel>
                       <QRCodeSVG value={getQrUrl(qrTable)} size={240} level="H" />
-                      <QrUrl>{getQrUrl(qrTable)}</QrUrl>
+                      <QrUrl
+                        type="button"
+                        title="클릭하면 링크가 복사됩니다"
+                        onClick={() => handleCopyQrUrl(getQrUrl(qrTable))}
+                      >
+                        {getQrUrl(qrTable)}
+                      </QrUrl>
                     </QrPrintCard>
                   </QrPrintArea>
                   <QrActions>
