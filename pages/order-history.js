@@ -13,6 +13,7 @@ import { useAdmins } from '../hooks/useAdmins';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/Toast';
 import { simpleViewAtom } from '../store/atoms';
+import FilterBar, { FilterRow, FilterSelect as FBSelect } from '../components/FilterBar';
 
 const statusColors = {
   pending: { bg: '#FFC107', text: '#333' },
@@ -212,96 +213,6 @@ const MobileOnly = styled.span`
 `;
 
 /* 필터 */
-const FilterSection = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: flex-end;
-`;
-
-const FilterGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-`;
-
-const FilterLabel = styled.label`
-  font-size: 12px;
-  color: #8b95a1;
-  font-weight: 600;
-`;
-
-const FilterInput = styled.input`
-  padding: 8px 12px;
-  border: 1px solid #e5e8eb;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #191f28;
-  outline: none;
-
-  &:focus {
-    border-color: #3182F6;
-  }
-`;
-
-const FilterSelect = styled.select`
-  padding: 8px 12px;
-  border: 1px solid #e5e8eb;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #191f28;
-  background: white;
-  outline: none;
-
-  &:focus {
-    border-color: #3182F6;
-  }
-`;
-
-const QuickButtons = styled.div`
-  display: flex;
-  gap: 6px;
-  align-items: flex-end;
-`;
-
-const QuickBtn = styled.button`
-  padding: 8px 14px;
-  border: 1px solid ${(p) => (p.$active ? '#3182F6' : '#e5e8eb')};
-  border-radius: 8px;
-  background: ${(p) => (p.$active ? '#3182F6' : 'white')};
-  color: ${(p) => (p.$active ? 'white' : '#333')};
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover {
-    border-color: #3182F6;
-  }
-`;
-
-/* 카운트 바 */
-const TableBar = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  gap: 12px;
-  flex-wrap: wrap;
-`;
-
-const TotalCount = styled.div`
-  font-size: 13px;
-  color: #8b95a1;
-
-  strong {
-    color: #191f28;
-    font-weight: 700;
-  }
-`;
 
 const StatusBadge = styled.span`
   display: inline-block;
@@ -670,6 +581,12 @@ function getToday() {
   return toLocalDate(new Date());
 }
 
+function getYesterday() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return toLocalDate(d);
+}
+
 function getWeekAgo() {
   const d = new Date();
   d.setDate(d.getDate() - 7);
@@ -835,6 +752,10 @@ export default function OrderHistoryPage() {
     if (range === 'today') {
       setStartDate(today);
       setEndDate(today);
+    } else if (range === 'yesterday') {
+      const y = getYesterday();
+      setStartDate(y);
+      setEndDate(y);
     } else if (range === 'week') {
       setStartDate(getWeekAgo());
       setEndDate(today);
@@ -850,6 +771,22 @@ export default function OrderHistoryPage() {
     if (field === 'start') setStartDate(value);
     else setEndDate(value);
   };
+
+  const handleResetFilters = () => {
+    setStartDate(today);
+    setEndDate(today);
+    setStatus('all');
+    setTableNumber('');
+    setServedBy('');
+    setSearch('');
+    setQuickRange('today');
+    setPage(1);
+  };
+
+  const detailFilterCount =
+    (status !== 'all' ? 1 : 0) +
+    (tableNumber ? 1 : 0) +
+    (servedBy ? 1 : 0);
 
   if (loading) return null;
 
@@ -935,84 +872,70 @@ export default function OrderHistoryPage() {
             </StatsRow>
           )}
 
-          {/* 필터 — 뷰 모드에서 숨김 */}
+          {/* 필터 — 심플 뷰에서 숨김 */}
           {!simpleView && (
-          <FilterSection>
-            <FilterGroup>
-              <FilterLabel>시작일</FilterLabel>
-              <FilterInput
-                type="date"
-                value={startDate}
-                onChange={(e) => handleDateChange('start', e.target.value)}
-              />
-            </FilterGroup>
-            <FilterGroup>
-              <FilterLabel>종료일</FilterLabel>
-              <FilterInput
-                type="date"
-                value={endDate}
-                onChange={(e) => handleDateChange('end', e.target.value)}
-              />
-            </FilterGroup>
-            <QuickButtons>
-              <QuickBtn $active={quickRange === 'today'} onClick={() => applyQuick('today')}>오늘</QuickBtn>
-              <QuickBtn $active={quickRange === 'week'} onClick={() => applyQuick('week')}>이번주</QuickBtn>
-              <QuickBtn $active={quickRange === 'month'} onClick={() => applyQuick('month')}>이번달</QuickBtn>
-            </QuickButtons>
-            <FilterGroup>
-              <FilterLabel>상태</FilterLabel>
-              <FilterSelect value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
-                <option value="all">전체</option>
-                <option value="served">전달완료</option>
-                <option value="cancelled">취소</option>
-                <option value="pending">조리대기</option>
-                <option value="preparing">조리시작</option>
-                <option value="ready">조리완료</option>
-              </FilterSelect>
-            </FilterGroup>
-            <FilterGroup>
-              <FilterLabel>테이블</FilterLabel>
-              <FilterSelect value={tableNumber} onChange={(e) => { setTableNumber(e.target.value); setPage(1); }}>
-                <option value="">전체</option>
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <option key={`1-${n}`} value={n}>1층 {n}번</option>
-                ))}
-                {[1, 2, 3].map((n) => (
-                  <option key={`2-${n}`} value={n}>2층 {n}번</option>
-                ))}
-              </FilterSelect>
-            </FilterGroup>
-            <FilterGroup>
-              <FilterLabel>직원</FilterLabel>
-              <FilterSelect value={servedBy} onChange={(e) => { setServedBy(e.target.value); setPage(1); }}>
-                <option value="">전체</option>
-                {admins.map((a) => (
-                  <option key={a._id} value={a._id}>
-                    {a.name || a.email}
-                  </option>
-                ))}
-              </FilterSelect>
-            </FilterGroup>
-            <FilterGroup>
-              <FilterLabel>메뉴 검색</FilterLabel>
-              <FilterInput
-                type="text"
-                placeholder="메뉴명 검색"
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              />
-            </FilterGroup>
-          </FilterSection>
-          )}
-
-          {/* 세션 카운트 — 뷰 모드에서 숨김 (뷰 토글은 상단 PageHeader로 이동) */}
-          {!simpleView && (
-            <TableBar>
-              <TotalCount>
-                총 <strong>{total.toLocaleString()}</strong> 세션
-                {summary?.orderCount ? <> · <strong>{summary.orderCount.toLocaleString()}</strong> 주문</> : null}
-              </TotalCount>
-            </TableBar>
+            <FilterBar
+              startDate={startDate}
+              endDate={endDate}
+              quickRange={quickRange}
+              onDateChange={handleDateChange}
+              onQuickRange={applyQuick}
+              searchValue={search}
+              searchPlaceholder="메뉴명 검색"
+              onSearchChange={(v) => { setSearch(v); setPage(1); }}
+              detailCount={detailFilterCount}
+              onReset={handleResetFilters}
+              totalText={(
+                <>
+                  총 <strong>{total.toLocaleString()}</strong> 세션
+                  {summary?.orderCount ? <> · <strong>{summary.orderCount.toLocaleString()}</strong> 주문</> : null}
+                </>
+              )}
+              detailFilters={(
+                <>
+                  <FilterRow label="상태">
+                    <FBSelect
+                      value={status}
+                      onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+                    >
+                      <option value="all">전체</option>
+                      <option value="served">전달완료</option>
+                      <option value="cancelled">취소</option>
+                      <option value="pending">조리대기</option>
+                      <option value="preparing">조리시작</option>
+                      <option value="ready">조리완료</option>
+                    </FBSelect>
+                  </FilterRow>
+                  <FilterRow label="테이블">
+                    <FBSelect
+                      value={tableNumber}
+                      onChange={(e) => { setTableNumber(e.target.value); setPage(1); }}
+                    >
+                      <option value="">전체</option>
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <option key={`1-${n}`} value={n}>1층 {n}번</option>
+                      ))}
+                      {[1, 2, 3].map((n) => (
+                        <option key={`2-${n}`} value={n}>2층 {n}번</option>
+                      ))}
+                    </FBSelect>
+                  </FilterRow>
+                  <FilterRow label="직원">
+                    <FBSelect
+                      value={servedBy}
+                      onChange={(e) => { setServedBy(e.target.value); setPage(1); }}
+                    >
+                      <option value="">전체</option>
+                      {admins.map((a) => (
+                        <option key={a._id} value={a._id}>
+                          {a.name || a.email}
+                        </option>
+                      ))}
+                    </FBSelect>
+                  </FilterRow>
+                </>
+              )}
+            />
           )}
           <SessionList>
             {isLoading ? (
@@ -1098,7 +1021,8 @@ export default function OrderHistoryPage() {
                                   items.map((i, idx) => (
                                     <div className="row" key={idx}>
                                       <span className="name">
-                                        {i.name}<span className="qty">x{i.quantity}</span>
+                                        {i.variantName ? `${i.name} (${i.variantName})` : i.name}
+                                        <span className="qty">x{i.quantity}</span>
                                       </span>
                                       <span className="price">
                                         {Number((i.price || 0) * (i.quantity || 0)).toLocaleString()}원

@@ -91,6 +91,19 @@ const MenuItem = styled.div`
   }
 `;
 
+const SectionLabel = styled.div`
+  padding: 16px 20px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #4B5563;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+
+  &:first-child {
+    padding-top: 8px;
+  }
+`;
+
 const Divider = styled.div`
   height: 1px;
   background: #333;
@@ -150,15 +163,36 @@ const LowerItem = styled.div`
   }
 `;
 
-const menuItems = [
-  { label: '상품', key: 'products', href: '/products' },
-  { label: '호출내역', key: 'call-history', href: '/call-history' },
-  { label: '주문', key: 'orders', href: '/orders' },
-  { label: '주문내역', key: 'order-history', href: '/order-history' },
-  { label: '테이블 현황', key: 'tables', href: '/tables' },
-  { label: '카테고리', key: 'categories', href: '/categories' },
-  { label: '공지사항', key: 'notices', href: '/notices' },
-  { label: '계정 관리', key: 'admins', href: '/admins' },
+const menuSections = [
+  {
+    title: '운영',
+    items: [
+      { label: '실시간 주문', key: 'orders', href: '/orders' },
+      { label: '호출내역', key: 'call-history', href: '/call-history' },
+      { label: '테이블 현황', key: 'tables', href: '/tables' },
+    ],
+  },
+  {
+    title: '매출',
+    items: [
+      { label: '주문내역', key: 'order-history', href: '/order-history' },
+    ],
+  },
+  {
+    title: '메뉴',
+    items: [
+      { label: '상품', key: 'products', href: '/products' },
+      { label: '카테고리', key: 'categories', href: '/categories' },
+    ],
+  },
+  {
+    title: '설정',
+    items: [
+      { label: '호출 아이템', key: 'call-items', href: '/call-items' },
+      { label: '공지사항', key: 'notices', href: '/notices' },
+      { label: '계정 관리', key: 'admins', href: '/admins' },
+    ],
+  },
 ];
 
 export default function Sidebar({ active = 'products' }) {
@@ -199,14 +233,19 @@ export default function Sidebar({ active = 'products' }) {
           </CloseBtn>
         </Logo>
         <MenuSection>
-          {menuItems.map((item) => (
-            <MenuItem
-              key={item.key}
-              $active={active === item.key}
-              onClick={() => handleNavigate(item.href)}
-            >
-              {item.label}
-            </MenuItem>
+          {menuSections.map((section) => (
+            <div key={section.title}>
+              <SectionLabel>{section.title}</SectionLabel>
+              {section.items.map((item) => (
+                <MenuItem
+                  key={item.key}
+                  $active={active === item.key}
+                  onClick={() => handleNavigate(item.href)}
+                >
+                  {item.label}
+                </MenuItem>
+              ))}
+            </div>
           ))}
         </MenuSection>
         <Divider />

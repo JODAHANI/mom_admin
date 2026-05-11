@@ -161,6 +161,92 @@ const SecondaryButton = styled.button`
   }
 `;
 
+const VariantList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+`;
+
+const VariantRow = styled.div`
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'name name'
+      'price actions';
+    & > :nth-child(1) { grid-area: name; }
+    & > :nth-child(2) { grid-area: price; }
+    & > :nth-child(3),
+    & > :nth-child(4) { grid-area: actions; justify-self: end; }
+  }
+`;
+
+const VariantInput = styled.input`
+  padding: 10px 12px;
+  border: 1px solid #e5e8eb;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+  box-sizing: border-box;
+  width: 100%;
+
+  &:focus {
+    border-color: #3182f6;
+  }
+
+  &::placeholder {
+    color: #b0b8c1;
+  }
+`;
+
+const VariantSoldOutBtn = styled.button`
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid ${(p) => (p.$active ? '#FF3B30' : '#e5e8eb')};
+  background: ${(p) => (p.$active ? '#FFF0F0' : 'white')};
+  color: ${(p) => (p.$active ? '#FF3B30' : '#4e5968')};
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+`;
+
+const VariantRemoveBtn = styled.button`
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e5e8eb;
+  background: white;
+  color: #8b95a1;
+  font-size: 18px;
+  cursor: pointer;
+
+  &:hover {
+    color: #FF3B30;
+    border-color: #FFD0D0;
+  }
+`;
+
+const AddVariantBtn = styled.button`
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px dashed #c6d4ef;
+  background: #f5f9ff;
+  color: #3182f6;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: #ebf3ff;
+  }
+`;
+
 
 export default function ProductForm({ initialData, onSubmit, onCancel, loading }) {
   const { data: categories = [] } = useCategories();
@@ -173,6 +259,7 @@ export default function ProductForm({ initialData, onSubmit, onCancel, loading }
     image: '',
     categoryIds: [],
     badges: [],
+    variants: [],
     showOnTable: true,
     showOnAdminOrder: true,
   });
@@ -180,6 +267,13 @@ export default function ProductForm({ initialData, onSubmit, onCancel, loading }
   useEffect(() => {
     if (initialData) {
       const ids = (initialData.categoryIds || []).map((c) => c._id || c);
+      const variants = Array.isArray(initialData.variants)
+        ? initialData.variants.map((v) => ({
+            name: v.name || '',
+            price: v.price != null ? String(v.price) : '',
+            isSoldOut: !!v.isSoldOut,
+          }))
+        : [];
       setForm({
         name: initialData.name || '',
         price: initialData.price?.toString() || '',
@@ -187,6 +281,7 @@ export default function ProductForm({ initialData, onSubmit, onCancel, loading }
         image: initialData.image || '',
         categoryIds: ids,
         badges: initialData.badges || [],
+        variants,
         showOnTable: initialData.showOnTable !== false,
         showOnAdminOrder: initialData.showOnAdminOrder !== false,
       });
@@ -233,11 +328,40 @@ export default function ProductForm({ initialData, onSubmit, onCancel, loading }
     }));
   };
 
+  const handleAddVariant = () => {
+    setForm((prev) => ({
+      ...prev,
+      variants: [...prev.variants, { name: '', price: '', isSoldOut: false }],
+    }));
+  };
+
+  const handleVariantChange = (index, field, value) => {
+    setForm((prev) => ({
+      ...prev,
+      variants: prev.variants.map((v, i) => (i === index ? { ...v, [field]: value } : v)),
+    }));
+  };
+
+  const handleRemoveVariant = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      variants: prev.variants.filter((_, i) => i !== index),
+    }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    const cleanedVariants = form.variants
+      .map((v) => ({
+        name: v.name.trim(),
+        price: v.price === '' || v.price == null ? null : Number(v.price),
+        isSoldOut: !!v.isSoldOut,
+      }))
+      .filter((v) => v.name);
     onSubmit({
       ...form,
       price: Number(form.price),
+      variants: cleanedVariants,
     });
   };
 
@@ -310,6 +434,47 @@ export default function ProductForm({ initialData, onSubmit, onCancel, loading }
             </BadgeLabel>
           ))}
         </BadgeGroup>
+      </FieldGroup>
+
+      <FieldGroup>
+        <Label>옵션</Label>
+        {form.variants.length > 0 && (
+          <VariantList>
+            {form.variants.map((v, idx) => (
+              <VariantRow key={idx}>
+                <VariantInput
+                  type="text"
+                  value={v.name}
+                  onChange={(e) => handleVariantChange(idx, 'name', e.target.value)}
+                  placeholder="이름 (예: 참이슬, 카스)"
+                />
+                <VariantInput
+                  type="number"
+                  value={v.price}
+                  onChange={(e) => handleVariantChange(idx, 'price', e.target.value)}
+                  placeholder={`가격 (기본 ${form.price || 0}원)`}
+                />
+                <VariantSoldOutBtn
+                  type="button"
+                  $active={v.isSoldOut}
+                  onClick={() => handleVariantChange(idx, 'isSoldOut', !v.isSoldOut)}
+                >
+                  {v.isSoldOut ? '품절중' : '판매중'}
+                </VariantSoldOutBtn>
+                <VariantRemoveBtn
+                  type="button"
+                  aria-label="옵션 삭제"
+                  onClick={() => handleRemoveVariant(idx)}
+                >
+                  &times;
+                </VariantRemoveBtn>
+              </VariantRow>
+            ))}
+          </VariantList>
+        )}
+        <AddVariantBtn type="button" onClick={handleAddVariant}>
+          + 옵션 추가
+        </AddVariantBtn>
       </FieldGroup>
 
       <FieldGroup>

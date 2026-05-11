@@ -7,6 +7,7 @@ import { useStaffCallHistory, useResolveStaffCall } from '../hooks/useStaffCalls
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/Toast';
 import { simpleViewAtom } from '../store/atoms';
+import FilterBar, { SegmentedControl, FilterRow } from '../components/FilterBar';
 
 const statusColors = {
   pending: { bg: '#FF9800', text: 'white' },
@@ -127,95 +128,6 @@ const StatValue = styled.div`
   }
 `;
 
-const FilterSection = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: flex-end;
-`;
-
-const FilterGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-`;
-
-const FilterLabel = styled.label`
-  font-size: 12px;
-  color: #8b95a1;
-  font-weight: 600;
-`;
-
-const FilterInput = styled.input`
-  padding: 8px 12px;
-  border: 1px solid #e5e8eb;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #191f28;
-  outline: none;
-
-  &:focus {
-    border-color: #3182F6;
-  }
-`;
-
-const FilterSelect = styled.select`
-  padding: 8px 12px;
-  border: 1px solid #e5e8eb;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #191f28;
-  background: white;
-  outline: none;
-
-  &:focus {
-    border-color: #3182F6;
-  }
-`;
-
-const QuickButtons = styled.div`
-  display: flex;
-  gap: 6px;
-  align-items: flex-end;
-`;
-
-const QuickBtn = styled.button`
-  padding: 8px 14px;
-  border: 1px solid ${(p) => (p.$active ? '#3182F6' : '#e5e8eb')};
-  border-radius: 8px;
-  background: ${(p) => (p.$active ? '#3182F6' : 'white')};
-  color: ${(p) => (p.$active ? 'white' : '#333')};
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover {
-    border-color: #3182F6;
-  }
-`;
-
-const TableBar = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  gap: 12px;
-  flex-wrap: wrap;
-`;
-
-const TotalCount = styled.div`
-  font-size: 13px;
-  color: #8b95a1;
-
-  strong {
-    color: #191f28;
-    font-weight: 700;
-  }
-`;
 
 const StatusBadge = styled.span`
   display: inline-block;
@@ -355,6 +267,25 @@ const ElapsedChip = styled(MetaChip)`
   color: #B45309;
 `;
 
+const ItemsRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+`;
+
+const ItemChip = styled.span`
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #FFF3E0;
+  color: #B45309;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid #FCE7B8;
+`;
+
 const EmptyState = styled.div`
   background: white;
   border-radius: 14px;
@@ -422,6 +353,7 @@ function toLocalDate(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 function getToday() { return toLocalDate(new Date()); }
+function getYesterday() { const d = new Date(); d.setDate(d.getDate() - 1); return toLocalDate(d); }
 function getWeekAgo() { const d = new Date(); d.setDate(d.getDate() - 7); return toLocalDate(d); }
 function getMonthStart() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; }
 
@@ -494,6 +426,7 @@ export default function CallHistoryPage() {
     setQuickRange(range);
     setPage(1);
     if (range === 'today') { setStartDate(today); setEndDate(today); }
+    else if (range === 'yesterday') { const y = getYesterday(); setStartDate(y); setEndDate(y); }
     else if (range === 'week') { setStartDate(getWeekAgo()); setEndDate(today); }
     else if (range === 'month') { setStartDate(getMonthStart()); setEndDate(today); }
   };
@@ -504,6 +437,17 @@ export default function CallHistoryPage() {
     if (field === 'start') setStartDate(value);
     else setEndDate(value);
   };
+
+  const handleReset = () => {
+    setStartDate(today);
+    setEndDate(today);
+    setStatus('all');
+    setFloor('');
+    setQuickRange('today');
+    setPage(1);
+  };
+
+  const detailCount = (status !== 'all' ? 1 : 0) + (floor ? 1 : 0);
 
   if (loading) return null;
 
@@ -532,44 +476,43 @@ export default function CallHistoryPage() {
           )}
 
           {!simpleView && (
-          <FilterSection>
-            <FilterGroup>
-              <FilterLabel>시작일</FilterLabel>
-              <FilterInput type="date" value={startDate} onChange={(e) => handleDateChange('start', e.target.value)} />
-            </FilterGroup>
-            <FilterGroup>
-              <FilterLabel>종료일</FilterLabel>
-              <FilterInput type="date" value={endDate} onChange={(e) => handleDateChange('end', e.target.value)} />
-            </FilterGroup>
-            <QuickButtons>
-              <QuickBtn $active={quickRange === 'today'} onClick={() => applyQuick('today')}>오늘</QuickBtn>
-              <QuickBtn $active={quickRange === 'week'} onClick={() => applyQuick('week')}>이번주</QuickBtn>
-              <QuickBtn $active={quickRange === 'month'} onClick={() => applyQuick('month')}>이번달</QuickBtn>
-            </QuickButtons>
-            <FilterGroup>
-              <FilterLabel>상태</FilterLabel>
-              <FilterSelect value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
-                <option value="all">전체</option>
-                <option value="pending">대기중</option>
-                <option value="resolved">처리완료</option>
-              </FilterSelect>
-            </FilterGroup>
-            <FilterGroup>
-              <FilterLabel>층</FilterLabel>
-              <FilterSelect value={floor} onChange={(e) => { setFloor(e.target.value); setPage(1); }}>
-                <option value="">전체</option>
-                <option value="1">1층</option>
-                <option value="2">2층</option>
-                <option value="3">야외</option>
-              </FilterSelect>
-            </FilterGroup>
-          </FilterSection>
-          )}
-
-          {!simpleView && (
-            <TableBar>
-              <TotalCount>총 <strong>{total.toLocaleString()}</strong>건</TotalCount>
-            </TableBar>
+            <FilterBar
+              startDate={startDate}
+              endDate={endDate}
+              quickRange={quickRange}
+              onDateChange={handleDateChange}
+              onQuickRange={applyQuick}
+              detailCount={detailCount}
+              onReset={handleReset}
+              totalText={<>총 <strong>{total.toLocaleString()}</strong>건</>}
+              detailFilters={(
+                <>
+                  <FilterRow label="상태">
+                    <SegmentedControl
+                      value={status}
+                      onChange={(v) => { setStatus(v); setPage(1); }}
+                      options={[
+                        { value: 'all', label: '전체' },
+                        { value: 'pending', label: '대기중' },
+                        { value: 'resolved', label: '처리완료' },
+                      ]}
+                    />
+                  </FilterRow>
+                  <FilterRow label="층">
+                    <SegmentedControl
+                      value={floor}
+                      onChange={(v) => { setFloor(v); setPage(1); }}
+                      options={[
+                        { value: '', label: '전체' },
+                        { value: '1', label: '1층' },
+                        { value: '2', label: '2층' },
+                        { value: '3', label: '야외' },
+                      ]}
+                    />
+                  </FilterRow>
+                </>
+              )}
+            />
           )}
 
           <CallList>
@@ -598,6 +541,13 @@ export default function CallHistoryPage() {
                         <SoftDot />
                         <TimeText>{formatDateTime(c.createdAt)}</TimeText>
                       </HeadTopRow>
+                      {Array.isArray(c.items) && c.items.length > 0 && (
+                        <ItemsRow>
+                          {c.items.map((it, i) => (
+                            <ItemChip key={`${c._id}-${i}`}>{it}</ItemChip>
+                          ))}
+                        </ItemsRow>
+                      )}
                       <FootRow>
                         <FootMeta>
                           {c.resolvedAt && (

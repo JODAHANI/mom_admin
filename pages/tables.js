@@ -1091,6 +1091,13 @@ export default function TablesPage() {
     return `https://client-tau-seven-68.vercel.app/table/${table.token}`;
   };
 
+  const getDisplayUrl = (table) => {
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      return `http://localhost:3001/table/${table.token}`;
+    }
+    return getQrUrl(table);
+  };
+
   const handleCopyQrUrl = async (url) => {
     try {
       if (navigator.clipboard?.writeText) {
@@ -1400,9 +1407,9 @@ export default function TablesPage() {
                       <QrUrl
                         type="button"
                         title="클릭하면 링크가 복사됩니다"
-                        onClick={() => handleCopyQrUrl(getQrUrl(qrTable))}
+                        onClick={() => handleCopyQrUrl(getDisplayUrl(qrTable))}
                       >
-                        {getQrUrl(qrTable)}
+                        {getDisplayUrl(qrTable)}
                       </QrUrl>
                     </QrPrintCard>
                   </QrPrintArea>

@@ -426,6 +426,76 @@ const EmptyGrid = styled.div`
   font-size: 14px;
 `;
 
+const VariantOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+`;
+
+const VariantModal = styled.div`
+  background: white;
+  border-radius: 16px;
+  width: 400px;
+  max-width: calc(100vw - 32px);
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+`;
+
+const VariantHeader = styled.div`
+  padding: 18px 20px;
+  border-bottom: 1px solid #e5e8eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const VariantTitle = styled.h4`
+  font-size: 16px;
+  font-weight: 700;
+  color: #191f28;
+`;
+
+const VariantList = styled.div`
+  padding: 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const VariantChoice = styled.button`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid #e5e8eb;
+  border-radius: 10px;
+  background: white;
+  font-size: 15px;
+  font-weight: 600;
+  color: #191f28;
+  cursor: pointer;
+  opacity: ${(p) => (p.$soldOut ? 0.5 : 1)};
+  pointer-events: ${(p) => (p.$soldOut ? 'none' : 'auto')};
+
+  &:hover {
+    background: #f5f9ff;
+    border-color: #c6d4ef;
+  }
+`;
+
+const VariantPrice = styled.span`
+  font-size: 14px;
+  color: #4e5968;
+  font-weight: 700;
+`;
+
 export default function OrderCreateModal({ table, onClose }) {
   const showToast = useToast();
   const { data: products = [], isLoading: productsLoading } = useProducts();
@@ -435,6 +505,10 @@ export default function OrderCreateModal({ table, onClose }) {
   const [categoryId, setCategoryId] = useState('all');
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState([]);
+  const [variantPicker, setVariantPicker] = useState(null);
+
+  const sameLine = (a, b) =>
+    a.productId === b.productId && (a.variantName || '') === (b.variantName || '');
 
   const filtered = useMemo(() => {
     const list = Array.isArray(products) ? products : products?.data || [];
@@ -455,31 +529,43 @@ export default function OrderCreateModal({ table, onClose }) {
 
   const addToCart = (product) => {
     if (product.isSoldOut) return;
+    // 변형이 있는 상품은 시트로 종류를 먼저 선택받음
+    if (Array.isArray(product.variants) && product.variants.length > 0) {
+      setVariantPicker(product);
+      return;
+    }
+    addLine(product, null);
+  };
+
+  const addLine = (product, variant) => {
+    const variantName = variant?.name || '';
+    const price = variant && variant.price != null ? variant.price : product.price;
+    const newLine = {
+      productId: product._id,
+      name: product.name,
+      variantName,
+      price,
+      quantity: 1,
+    };
     setCart((prev) => {
-      const existing = prev.find((i) => i.productId === product._id);
+      const existing = prev.find((i) => sameLine(i, newLine));
       if (existing) {
-        return prev.map((i) =>
-          i.productId === product._id ? { ...i, quantity: i.quantity + 1 } : i
-        );
+        return prev.map((i) => (sameLine(i, newLine) ? { ...i, quantity: i.quantity + 1 } : i));
       }
-      return [
-        ...prev,
-        {
-          productId: product._id,
-          name: product.name,
-          price: product.price,
-          quantity: 1,
-        },
-      ];
+      return [...prev, newLine];
     });
   };
 
-  const changeQty = (productId, delta) => {
+  const handleVariantPick = (variant) => {
+    if (!variantPicker || variant.isSoldOut) return;
+    addLine(variantPicker, variant);
+    setVariantPicker(null);
+  };
+
+  const changeQty = (line, delta) => {
     setCart((prev) => {
       const next = prev
-        .map((i) =>
-          i.productId === productId ? { ...i, quantity: i.quantity + delta } : i
-        )
+        .map((i) => (sameLine(i, line) ? { ...i, quantity: i.quantity + delta } : i))
         .filter((i) => i.quantity > 0);
       return next;
     });
@@ -592,21 +678,19 @@ export default function OrderCreateModal({ table, onClose }) {
                 <CartEmpty>메뉴를 선택해주세요</CartEmpty>
               ) : (
                 cart.map((item) => (
-                  <CartItem key={item.productId}>
+                  <CartItem key={`${item.productId}|${item.variantName || ''}`}>
                     <CartInfo>
-                      <CartName>{item.name}</CartName>
+                      <CartName>
+                        {item.variantName ? `${item.name} (${item.variantName})` : item.name}
+                      </CartName>
                       <CartPrice>
                         {(item.price * item.quantity).toLocaleString()}원
                       </CartPrice>
                     </CartInfo>
                     <QtyBox>
-                      <QtyBtn onClick={() => changeQty(item.productId, -1)}>
-                        −
-                      </QtyBtn>
+                      <QtyBtn onClick={() => changeQty(item, -1)}>−</QtyBtn>
                       <QtyNum>{item.quantity}</QtyNum>
-                      <QtyBtn onClick={() => changeQty(item.productId, 1)}>
-                        +
-                      </QtyBtn>
+                      <QtyBtn onClick={() => changeQty(item, 1)}>+</QtyBtn>
                     </QtyBox>
                   </CartItem>
                 ))
@@ -629,6 +713,34 @@ export default function OrderCreateModal({ table, onClose }) {
           </CartPane>
         </Body>
       </Modal>
+      {variantPicker && (
+        <VariantOverlay onClick={() => setVariantPicker(null)}>
+          <VariantModal onClick={(e) => e.stopPropagation()}>
+            <VariantHeader>
+              <VariantTitle>{variantPicker.name} 종류 선택</VariantTitle>
+              <CloseBtn onClick={() => setVariantPicker(null)}>&times;</CloseBtn>
+            </VariantHeader>
+            <VariantList>
+              {(variantPicker.variants || []).map((v) => {
+                const price = v.price != null ? v.price : variantPicker.price;
+                return (
+                  <VariantChoice
+                    key={v._id || v.name}
+                    $soldOut={v.isSoldOut}
+                    onClick={() => handleVariantPick(v)}
+                  >
+                    <span>
+                      {v.name}
+                      {v.isSoldOut && ' (품절)'}
+                    </span>
+                    <VariantPrice>{Number(price || 0).toLocaleString()}원</VariantPrice>
+                  </VariantChoice>
+                );
+              })}
+            </VariantList>
+          </VariantModal>
+        </VariantOverlay>
+      )}
     </Overlay>
   );
 }

@@ -95,7 +95,7 @@ export default function OrdersPage() {
       <Sidebar active="orders" />
       <MainArea>
         <Content>
-          <Header title="주문 관리" />
+          <Header title="실시간 주문" />
           <TabsRow>
             <Tab
               $active={isAllSelected}

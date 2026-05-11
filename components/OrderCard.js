@@ -372,7 +372,11 @@ export default function OrderCard({ order }) {
 
   const items = order.items || [];
   const itemsText = items
-    .map((item) => `${item.name || item.product?.name || '상품'} x${item.quantity}`)
+    .map((item) => {
+      const base = item.name || item.product?.name || '상품';
+      const display = item.variantName ? `${base} (${item.variantName})` : base;
+      return `${display} x${item.quantity}`;
+    })
     .join(', ');
 
   const total = order.totalAmount || items.reduce((sum, i) => sum + (i.price || 0) * (i.quantity || 0), 0);

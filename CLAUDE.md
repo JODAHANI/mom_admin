@@ -41,15 +41,18 @@ admin/
 │   ├── products/new.js      # 상품 등록
 │   ├── products/[id].js     # 상품 수정/삭제
 │   ├── orders.js            # 실시간 주문 관리 (상태별 탭, WS)
-│   ├── order-history.js     # 주문 내역 + 통계 (날짜/상태/테이블 필터)
-│   ├── tables.js            # 테이블 현황 (층별, 상태, 주문내역 모달)
+│   ├── order-history.js     # 주문 내역 + 통계 (날짜/상태/테이블 필터, 매출달력)
+│   ├── call-history.js      # 직원호출 내역 + 통계 (날짜/상태/층 필터, 처리 토글)
+│   ├── tables.js            # 테이블 현황 (층별, 상태, 주문내역/결제 모달, QR 출력)
 │   ├── categories.js        # 카테고리 CRUD + 순서 변경
-│   └── notices.js           # 공지사항 CRUD
+│   ├── notices.js           # 공지사항 CRUD
+│   ├── call-items.js        # 호출 항목 CRUD + 순서 변경 (삭제 시 확인 모달)
+│   └── admins.js            # 관리자 계정 CRUD (자기 자신 삭제 방지)
 ├── components/
 │   ├── Sidebar.js           # 고정 좌측 네비 (240px, #1b1d1f)
-│   ├── Header.js            # 상단 바 (키오스크 토글, 알림 벨+드롭다운)
+│   ├── Header.js            # 상단 바 (사이드바 토글, 알림 벨+드롭다운)
 │   ├── ProductCard.js       # 상품 카드 (이미지, 뱃지, 품절/채널 토글)
-│   ├── ProductForm.js       # 상품 폼 (등록/수정 공용, 이미지 드래그앤드롭)
+│   ├── ProductForm.js       # 상품 폼 (등록/수정 공용, 이미지 업로드, 옵션 편집)
 │   ├── OrderCard.js         # 주문 카드 (상태 진행, 취소, 하이라이트)
 │   ├── CategoryList.js      # 카테고리 리스트 (인라인 편집, 순서 변경)
 │   ├── SalesCalendar.js     # 월별 매출 달력 (일별 매출/건수/취소, 최고·최저일 강조)
@@ -57,17 +60,20 @@ admin/
 │   └── Toggle.js            # 토글 스위치 (sm/md 사이즈)
 ├── hooks/
 │   ├── useAuth.js           # login/logout, 토큰 localStorage, 인증 리다이렉트
+│   ├── useAdmins.js         # 관리자 CRUD
 │   ├── useProducts.js       # CRUD + reorder + soldOut + toggleChannel
 │   ├── useCategories.js     # CRUD + reorder
 │   ├── useOrders.js         # 목록 + 상태변경 + WebSocket (NEW_ORDER, STAFF_CALL)
 │   ├── useOrderHistory.js   # 주문내역 조회 + 통계 + 월별 매출집계(useMonthlySales)
+│   ├── useStaffCalls.js     # 대기 목록 + 호출 내역(필터/페이지네이션) + resolve
 │   ├── useTables.js         # CRUD + status (30초 자동 갱신)
-│   └── useNotices.js        # CRUD
+│   ├── useNotices.js        # CRUD
+│   └── useCallItems.js      # CRUD + reorder
 ├── lib/
 │   ├── api.js               # axios 인스턴스 (Bearer 토큰 인터셉터, 401 리다이렉트)
 │   └── websocket.js         # WebSocketManager (자동 재연결 3초)
 ├── store/
-│   └── atoms.js             # Jotai atoms (kioskMode, notifications, sidebar, search, highlightOrder)
+│   └── atoms.js             # Jotai atoms (notifications, sidebar(open/collapsed), search, highlightOrder, autoPrintOnClear, simpleView)
 └── public/images/           # 정적 이미지
 ```
 
@@ -86,6 +92,7 @@ admin/
 - ProductForm 공용 (등록/수정)
 - 이미지 드래그앤드롭 업로드 → S3
 - 카테고리 다중 선택, 뱃지 선택
+- 옵션(variants) 편집: 이름·가격(선택, 비우면 기본가)·품절 토글·삭제. 종류가 있는 메뉴(소주/맥주)만 입력
 
 ### /orders
 - 실시간 주문 카드 (WebSocket NEW_ORDER)
@@ -111,6 +118,7 @@ admin/
 - 층별 필터 (전체, 1층, 2층, 야외)
 - 테이블 카드: 상태(빈/주문중), 경과시간, 미완료 주문 뱃지
 - 클릭 → 모달 (주문 목록, 테이블 비우기, 삭제)
+- "주문 추가" → OrderCreateModal — 옵션 있는 상품 클릭 시 종류 선택 모달이 한 번 더 뜸
 - 30초 자동 갱신, 서빙대기 펄스 애니메이션
 
 ### /categories
@@ -118,6 +126,22 @@ admin/
 
 ### /notices
 - 공지사항 추가/인라인 수정/삭제
+
+### /call-items
+- 고객 직원호출 시트에 표시될 항목 관리 (추가/인라인 수정/삭제/순서 변경)
+- 삭제는 확인 모달(빨강 CTA, 처리 중 비활성)로 진행 — `window.confirm` 미사용
+- 호출 내역 카드는 항목을 칩으로 표시
+
+### /call-history
+- 직원호출 내역 (페이지네이션 20건)
+- 빠른 범위: 오늘 / 이번주 / 이번달
+- 필터: 시작일/종료일, 상태(전체/대기중/처리완료), 층
+- 통계 카드: 총 호출, 대기중, 처리완료 (simpleView 시 숨김)
+- pending 호출은 행에서 직접 "처리 완료" 버튼으로 resolve 가능
+
+### /admins
+- 관리자 계정 CRUD (이름/아이디/비밀번호/role)
+- 자기 자신 삭제는 서버에서 차단됨 — UI에서도 버튼 비활성
 
 ## 주요 패턴
 
@@ -139,7 +163,8 @@ admin/
 
 ### 상태 관리
 - 서버 상태: React Query (모든 API 데이터)
-- 글로벌 UI: Jotai atoms (kioskMode, notifications, search, sidebar, highlight)
+- 글로벌 UI: Jotai atoms — notifications, search, sidebar(open/collapsed), highlightOrder
+- 영구 설정(atomWithStorage): sidebarCollapsed, autoPrintOnClear(테이블 비우기 시 영수증 자동출력), simpleView(주문/호출 내역 통계·필터 숨김)
 - 로컬 UI: useState (모달, 폼 입력 등)
 
 ### 스타일링

@@ -123,7 +123,12 @@ export function useWebSocketOrders(showToast) {
         queryClient.invalidateQueries({ queryKey: ['call-history'] });
         const call = message.data;
         const tableInfo = call.tableNumber ? `${call.floor || 1}층 ${call.tableNumber}번` : '';
-        const msg = tableInfo ? `${tableInfo} 테이블에서 직원을 호출했습니다` : '직원 호출이 왔습니다';
+        const itemsText = Array.isArray(call.items) && call.items.length > 0
+          ? ` — ${call.items.join(', ')}`
+          : '';
+        const msg = tableInfo
+          ? `${tableInfo} 테이블에서 호출${itemsText}`
+          : `직원 호출${itemsText}`;
         setNotifications((prev) => [
           ...prev,
           { id: Date.now(), type: 'staffCall', message: msg, time: new Date(), callId: call._id || call.id },
