@@ -768,9 +768,18 @@ export default function ReservationForm({
     }
     if (speech.listening) {
       speech.stop();
-    } else {
-      speech.start();
+      return;
     }
+    // "다시 녹음하기" — 이미 한 번 입력된 상태에서 다시 누르면 폼 초기화
+    if (phase === 'fill') {
+      setForm(emptyForm(defaultDate));
+      setFilled({});
+      setCompleted({});
+      setCurrentField(null);
+      setPhase('voice');
+      speech.reset();
+    }
+    speech.start();
   };
 
   useEffect(() => {
