@@ -153,6 +153,164 @@ const HiddenDateInput = styled.input`
   height: 0;
 `;
 
+const MenuPrepCard = styled.div`
+  background: white;
+  border-radius: 16px;
+  padding: 14px 18px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+
+  @media (max-width: 480px) {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+`;
+
+const MenuPrepLabel = styled.div`
+  font-size: 13px;
+  color: #4B5563;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+
+  strong {
+    color: #1B1D1F;
+    font-weight: 800;
+    font-size: 15px;
+  }
+`;
+
+const MenuPrepChips = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+`;
+
+const MenuPrepChip = styled.span`
+  background: #1B1D1F;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  span {
+    font-weight: 800;
+  }
+`;
+
+const ConfirmOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+`;
+
+const ConfirmModal = styled.div`
+  background: white;
+  border-radius: 16px;
+  width: 400px;
+  max-width: calc(100vw - 32px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+`;
+
+const ConfirmHeader = styled.div`
+  padding: 20px 24px;
+  border-bottom: 1px solid #E5E8EB;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const ConfirmTitle = styled.h3`
+  font-size: 18px;
+  font-weight: 700;
+  color: #191f28;
+`;
+
+const ConfirmCloseBtn = styled.button`
+  font-size: 32px;
+  line-height: 1;
+  color: #8b95a1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 10px;
+
+  &:hover { color: #191f28; }
+`;
+
+const ConfirmBody = styled.div`
+  padding: 24px;
+`;
+
+const ConfirmQuestion = styled.div`
+  font-size: 15px;
+  color: #333;
+  text-align: center;
+  margin-bottom: 8px;
+  line-height: 1.5;
+`;
+
+const ConfirmHint = styled.div`
+  font-size: 12px;
+  color: #8b95a1;
+  text-align: center;
+`;
+
+const ConfirmFooter = styled.div`
+  padding: 16px 24px;
+  border-top: 1px solid #E5E8EB;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+`;
+
+const CancelConfirmBtn = styled.button`
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #E5E8EB;
+  border-radius: 10px;
+  background: white;
+  color: #333;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+
+  &:hover { background: #F5F6F8; }
+  &:disabled { cursor: not-allowed; opacity: 0.6; }
+`;
+
+const DeleteConfirmBtn = styled.button`
+  flex: 1;
+  padding: 16px;
+  border: none;
+  border-radius: 10px;
+  background: #F44336;
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+
+  &:hover { background: #D32F2F; }
+  &:disabled { background: #ccc; cursor: not-allowed; }
+`;
+
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 function pad(n) { return String(n).padStart(2, '0'); }
@@ -190,6 +348,7 @@ export default function Reservations() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [defaultTime, setDefaultTime] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const dateInputRef = useRef(null);
 
   const { data: reservations, isLoading } = useReservations({ date: selectedDate });
@@ -230,12 +389,17 @@ export default function Reservations() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!editing) return;
-    if (!window.confirm('이 예약을 삭제할까요?')) return;
+    setConfirmDelete(editing);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDelete) return;
     try {
-      await deleteMutation.mutateAsync(editing._id);
+      await deleteMutation.mutateAsync(confirmDelete._id);
       showToast('예약이 삭제되었습니다', 'success');
+      setConfirmDelete(null);
       handleClose();
     } catch (e) {
       showToast('삭제 실패', 'error');
@@ -256,6 +420,22 @@ export default function Reservations() {
 
   const isToday = selectedDate === todayYmd();
   const label = formatDateLabel(selectedDate);
+
+  const menuPrep = (() => {
+    const map = new Map();
+    for (const r of reservations || []) {
+      for (const it of r.items || []) {
+        const name = it.name || '';
+        if (!name) continue;
+        map.set(name, (map.get(name) || 0) + (Number(it.quantity) || 1));
+      }
+    }
+    const chips = Array.from(map.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, qty]) => ({ name, qty }));
+    const total = chips.reduce((s, c) => s + c.qty, 0);
+    return { chips, total };
+  })();
 
   return (
     <PageContainer>
@@ -308,7 +488,22 @@ export default function Reservations() {
             />
           </DateCard>
 
-          {!simpleView && (
+          {menuPrep.chips.length > 0 && (
+            <MenuPrepCard>
+              <MenuPrepLabel>
+                오늘 준비할 메뉴 <strong>{menuPrep.total}개</strong>
+              </MenuPrepLabel>
+              <MenuPrepChips>
+                {menuPrep.chips.map((c) => (
+                  <MenuPrepChip key={c.name}>
+                    {c.name} <span>{c.qty}</span>
+                  </MenuPrepChip>
+                ))}
+              </MenuPrepChips>
+            </MenuPrepCard>
+          )}
+
+          {!simpleView && (reservations || []).length > 0 && (
             <ReservationStats reservations={reservations || []} />
           )}
 
@@ -330,6 +525,45 @@ export default function Reservations() {
         onDelete={editing ? handleDelete : null}
         submitting={createMutation.isPending || updateMutation.isPending || deleteMutation.isPending}
       />
+
+      {confirmDelete && (
+        <ConfirmOverlay
+          onClick={() => !deleteMutation.isPending && setConfirmDelete(null)}
+        >
+          <ConfirmModal onClick={(e) => e.stopPropagation()}>
+            <ConfirmHeader>
+              <ConfirmTitle>예약 삭제</ConfirmTitle>
+              <ConfirmCloseBtn
+                onClick={() => !deleteMutation.isPending && setConfirmDelete(null)}
+              >
+                &times;
+              </ConfirmCloseBtn>
+            </ConfirmHeader>
+            <ConfirmBody>
+              <ConfirmQuestion>
+                {confirmDelete.customerName
+                  ? `"${confirmDelete.customerName}" 님의 예약을 삭제할까요?`
+                  : '이 예약을 삭제할까요?'}
+              </ConfirmQuestion>
+              <ConfirmHint>삭제 후 되돌릴 수 없습니다</ConfirmHint>
+            </ConfirmBody>
+            <ConfirmFooter>
+              <CancelConfirmBtn
+                onClick={() => setConfirmDelete(null)}
+                disabled={deleteMutation.isPending}
+              >
+                취소
+              </CancelConfirmBtn>
+              <DeleteConfirmBtn
+                onClick={handleConfirmDelete}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? '삭제 중...' : '삭제'}
+              </DeleteConfirmBtn>
+            </ConfirmFooter>
+          </ConfirmModal>
+        </ConfirmOverlay>
+      )}
     </PageContainer>
   );
 }

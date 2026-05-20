@@ -268,22 +268,44 @@ const WizardBody = styled.div`
 const WizardActions = styled.div`
   display: flex;
   gap: 10px;
-  justify-content: flex-end;
+  width: 100%;
 `;
 
-const NextBtn = styled.button`
-  padding: 10px 20px;
-  background: #1B1D1F;
-  color: white;
-  border: none;
+const ActionBtn = styled.button`
+  flex: 1;
+  padding: 12px 20px;
+  border: 1px solid transparent;
   border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
 
-  &:hover { background: #2F3133; }
+  ${(p) => p.$variant === 'primary' && `
+    background: #1B1D1F;
+    color: white;
+    &:hover { background: #2F3133; }
+    &:disabled { background: #c8cdd2; cursor: not-allowed; }
+  `}
+  ${(p) => p.$variant === 'save' && `
+    background: #3182F6;
+    color: white;
+    &:hover { background: #1B64DA; }
+    &:disabled { background: #c8cdd2; cursor: not-allowed; }
+  `}
+  ${(p) => p.$variant === 'secondary' && `
+    background: white;
+    color: #4B5563;
+    border-color: #e5e8eb;
+    &:hover { border-color: #c8cdd2; color: #1B1D1F; }
+  `}
+  ${(p) => p.$variant === 'danger' && `
+    background: white;
+    color: #FF3B30;
+    border-color: #FFCCC7;
+    &:hover { background: #FFF1F0; }
+  `}
 `;
 
 const DoneNote = styled.div`
@@ -350,6 +372,8 @@ const Input = styled.input`
   outline: none;
   background: white;
   font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
 
   &:focus { border-color: #3182F6; }
 `;
@@ -514,56 +538,25 @@ const AddItemBtn = styled.button`
   &:hover { border-color: #3182F6; color: #3182F6; }
 `;
 
-const Footer = styled.div`
-  padding: 14px 20px;
-  border-top: 1px solid #e5e8eb;
+const BottomActions = styled.div`
   display: flex;
-  justify-content: space-between;
   gap: 10px;
-  background: #fafbfc;
-  flex-shrink: 0;
-  padding-bottom: max(14px, env(safe-area-inset-bottom));
+  width: 100%;
+  margin-top: 20px;
+`;
 
-  @media (max-width: 480px) {
-    padding: 12px 16px;
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
+function toLocalYmd(value) {
+  if (!value) return '';
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
+    return value.trim();
   }
-`;
-
-const FooterLeft = styled.div`
-  display: flex;
-  gap: 10px;
-`;
-
-const Btn = styled.button`
-  padding: 10px 18px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  border: 1px solid transparent;
-  font-family: inherit;
-
-  ${(p) => p.$variant === 'primary' && `
-    background: #3182F6;
-    color: white;
-    border-color: #3182F6;
-    &:hover { background: #1B64DA; }
-    &:disabled { background: #c8cdd2; border-color: #c8cdd2; cursor: not-allowed; }
-  `}
-  ${(p) => p.$variant === 'secondary' && `
-    background: white;
-    color: #4B5563;
-    border-color: #e5e8eb;
-    &:hover { border-color: #c8cdd2; }
-  `}
-  ${(p) => p.$variant === 'danger' && `
-    background: white;
-    color: #FF3B30;
-    border-color: #FFCCC7;
-    &:hover { background: #FFF1F0; }
-  `}
-`;
+  const d = value instanceof Date ? value : new Date(value);
+  if (isNaN(d.getTime())) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
 function emptyForm(date) {
   return {
@@ -711,14 +704,20 @@ export default function ReservationForm({
   const [currentField, setCurrentField] = useState(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setForm(emptyForm(''));
+      setFilled({});
+      setCompleted({});
+      setCurrentField(null);
+      setPhase('voice');
+      speech.reset();
+      return;
+    }
     if (initial && initial._id) {
       setForm({
         customerName: initial.customerName || '',
         phone: formatPhone(initial.phone || ''),
-        reservationDate: initial.reservationDate
-          ? new Date(initial.reservationDate).toISOString().slice(0, 10)
-          : '',
+        reservationDate: toLocalYmd(initial.reservationDate),
         reservationTime: initial.reservationTime || '',
         adults: initial.adults || 0,
         children: initial.children || 0,
@@ -895,7 +894,7 @@ export default function ReservationForm({
                       : '다시 녹음하기'}
                   </VoiceLabel>
                   <VoiceHint>
-                    예: "내일 오후 6시 김영희 010-1234-5678 어른 두 명 아이 한 명 장유해신탕 2개 매운 거 빼주세요"
+                    예: "김영희 내일 오후 6시 장유 2개 010-1234-5678 어른 두 명 아이 한 명"
                   </VoiceHint>
                 </VoiceInfo>
               </VoiceTop>
@@ -944,7 +943,7 @@ export default function ReservationForm({
                   <Label>연락처</Label>
                   <Input
                     value={form.phone}
-                    onChange={(e) => updateField('phone', e.target.value)}
+                    onChange={(e) => updateField('phone', formatPhone(e.target.value))}
                     placeholder="010-1234-5678"
                     inputMode="tel"
                   />
@@ -989,7 +988,7 @@ export default function ReservationForm({
               </FieldGrid>
 
               <Section>
-                <SectionTitle>사전 주문 메뉴</SectionTitle>
+                <SectionTitle>메뉴</SectionTitle>
                 {form.items.map((it, idx) => (
                   <ItemRow key={idx}>
                     <ItemInput
@@ -1021,7 +1020,15 @@ export default function ReservationForm({
             </>
           )}
 
-          {phase === 'fill' && !isEdit && currentField && (
+          {phase === 'fill' && !isEdit && currentField && (() => {
+            const willComplete = { ...completed, [currentField]: true };
+            const isLastField = !nextUnfilledKey(filled, willComplete, form);
+            const hasValue = hasFieldValue(currentField, form);
+            const rightLabel = isLastField
+              ? (submitting ? '저장 중…' : '저장')
+              : (hasValue ? '다음 →' : '건너뛰기');
+            const onRight = isLastField ? handleSubmit : goNext;
+            return (
             <WizardCard key={currentField}>
               <WizardLabel>다음 항목</WizardLabel>
               <WizardTitle>{fieldTitle(currentField)}</WizardTitle>
@@ -1039,7 +1046,7 @@ export default function ReservationForm({
                   <Input
                     autoFocus
                     value={form.phone}
-                    onChange={(e) => updateField('phone', e.target.value)}
+                    onChange={(e) => updateField('phone', formatPhone(e.target.value))}
                     onKeyDown={handleFieldKeyDown}
                     placeholder="010-1234-5678"
                     inputMode="tel"
@@ -1116,31 +1123,53 @@ export default function ReservationForm({
                 )}
               </WizardBody>
               <WizardActions>
-                <NextBtn onClick={goNext}>
-                  {hasFieldValue(currentField, form) ? '다음 →' : '건너뛰기'}
-                </NextBtn>
+                <ActionBtn type="button" $variant="secondary" onClick={onClose} disabled={submitting}>
+                  취소
+                </ActionBtn>
+                <ActionBtn
+                  type="button"
+                  $variant={isLastField ? 'save' : 'primary'}
+                  onClick={onRight}
+                  disabled={submitting}
+                >
+                  {rightLabel}
+                </ActionBtn>
               </WizardActions>
             </WizardCard>
-          )}
+            );
+          })()}
 
           {phase === 'fill' && !isEdit && !currentField && (
-            <DoneNote>✓ 입력 완료 — 저장 버튼을 눌러주세요</DoneNote>
+            <>
+              <DoneNote>✓ 입력 완료</DoneNote>
+              <BottomActions>
+                <ActionBtn type="button" $variant="secondary" onClick={onClose} disabled={submitting}>
+                  취소
+                </ActionBtn>
+                <ActionBtn type="button" $variant="save" onClick={handleSubmit} disabled={submitting}>
+                  {submitting ? '저장 중…' : '저장'}
+                </ActionBtn>
+              </BottomActions>
+            </>
+          )}
+
+          {phase === 'fill' && isEdit && (
+            <BottomActions>
+              {onDelete ? (
+                <ActionBtn type="button" $variant="danger" onClick={onDelete} disabled={submitting}>
+                  삭제
+                </ActionBtn>
+              ) : (
+                <ActionBtn type="button" $variant="secondary" onClick={onClose} disabled={submitting}>
+                  취소
+                </ActionBtn>
+              )}
+              <ActionBtn type="button" $variant="save" onClick={handleSubmit} disabled={submitting}>
+                {submitting ? '저장 중…' : '저장'}
+              </ActionBtn>
+            </BottomActions>
           )}
         </Body>
-
-        <Footer>
-          <FooterLeft>
-            {isEdit && onDelete && (
-              <Btn $variant="danger" onClick={onDelete} disabled={submitting}>삭제</Btn>
-            )}
-          </FooterLeft>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <Btn $variant="secondary" onClick={onClose} disabled={submitting}>취소</Btn>
-            <Btn $variant="primary" onClick={handleSubmit} disabled={submitting}>
-              {submitting ? '저장 중…' : '저장'}
-            </Btn>
-          </div>
-        </Footer>
       </Modal>
     </Overlay>
   );

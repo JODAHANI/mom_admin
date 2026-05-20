@@ -55,44 +55,6 @@ const StatSub = styled.div`
   color: #8B95A1;
 `;
 
-const MenuSection = styled.div`
-  margin-top: 18px;
-`;
-
-const MenuTitle = styled.div`
-  font-size: 13px;
-  color: #8B95A1;
-  margin-bottom: 10px;
-  font-weight: 500;
-`;
-
-const MenuChips = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-`;
-
-const MenuChip = styled.span`
-  background: #1B1D1F;
-  color: white;
-  padding: 8px 14px;
-  border-radius: 999px;
-  font-size: 14px;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-`;
-
-const ChipQty = styled.span`
-  font-weight: 800;
-`;
-
-const EmptyMenu = styled.div`
-  font-size: 13px;
-  color: #C8CDD2;
-`;
-
 export default function ReservationStats({ reservations }) {
   const stats = useMemo(() => {
     const list = reservations || [];
@@ -138,21 +100,6 @@ export default function ReservationStats({ reservations }) {
           <StatLabel>총 메뉴</StatLabel>
         </StatBox>
       </StatGrid>
-
-      <MenuSection>
-        <MenuTitle>준비할 메뉴</MenuTitle>
-        {stats.menuChips.length === 0 ? (
-          <EmptyMenu>등록된 메뉴 없음</EmptyMenu>
-        ) : (
-          <MenuChips>
-            {stats.menuChips.map((c) => (
-              <MenuChip key={c.name}>
-                {c.name} <ChipQty>{c.qty}</ChipQty>
-              </MenuChip>
-            ))}
-          </MenuChips>
-        )}
-      </MenuSection>
     </Card>
   );
 }
