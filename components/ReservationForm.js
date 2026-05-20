@@ -752,6 +752,15 @@ export default function ReservationForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  // 음성 미지원 브라우저(카카오톡 인앱 등)에서는 마이크 단계 건너뛰기
+  useEffect(() => {
+    if (!open) return;
+    if (isEdit) return;
+    if (phase !== 'voice') return;
+    if (speech.supported) return;
+    setPhase('fill');
+  }, [open, phase, speech.supported, isEdit]);
+
   const handleMicClick = () => {
     if (!speech.supported) {
       showToast('이 브라우저는 음성 인식을 지원하지 않습니다', 'error');
@@ -874,9 +883,12 @@ export default function ReservationForm({
         </Header>
 
         <Body>
-          {!speech.supported && (
+          {!speech.supported && !isEdit && (
             <UnsupportedNote>
-              이 브라우저는 음성 인식을 지원하지 않아요. Chrome 또는 Safari에서 사용해주세요. (그래도 수동 입력은 가능합니다)
+              {typeof window !== 'undefined' && /KAKAOTALK/i.test(window.navigator.userAgent)
+                ? '카카오톡 브라우저는 음성 입력을 지원하지 않아요. 우측 상단 메뉴(⋮)에서 "다른 브라우저로 열기"를 눌러주세요.'
+                : '이 브라우저는 음성 입력을 지원하지 않아요. Chrome 또는 Safari에서 열어주세요.'}
+              {' '}직접 입력은 그대로 가능합니다.
             </UnsupportedNote>
           )}
 

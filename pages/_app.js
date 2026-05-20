@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createGlobalStyle } from 'styled-components';
@@ -73,6 +73,21 @@ function WebSocketProvider({ children }) {
   return children;
 }
 
+function KakaoBrowserGuard() {
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const ua = window.navigator.userAgent;
+    if (!/KAKAOTALK/i.test(ua)) return;
+    if (sessionStorage.getItem('kakao-redirect-tried')) return;
+
+    const url = window.location.href;
+    sessionStorage.setItem('kakao-redirect-tried', '1');
+    window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(url)}`;
+  }, []);
+
+  return null;
+}
+
 function ThemedGlobalStyle() {
   const collapsed = useAtomValue(sidebarCollapsedAtom);
   return <GlobalStyle $collapsed={collapsed} />;
@@ -97,6 +112,7 @@ export default function App({ Component, pageProps }) {
         <title>장유해신탕 관리자</title>
       </Head>
       <ThemedGlobalStyle />
+      <KakaoBrowserGuard />
       <ToastProvider>
         <WebSocketProvider>
           <Component {...pageProps} />
