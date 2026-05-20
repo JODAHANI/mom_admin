@@ -19,6 +19,7 @@ export function useSpeechRecognition({
   const recognitionRef = useRef(null);
   const finalRef = useRef('');
   const silenceTimerRef = useRef(null);
+  const userStoppedRef = useRef(false);
 
   const clearSilenceTimer = () => {
     if (silenceTimerRef.current) {
@@ -33,6 +34,7 @@ export function useSpeechRecognition({
     silenceTimerRef.current = setTimeout(() => {
       const r = recognitionRef.current;
       if (!r) return;
+      userStoppedRef.current = true;
       try { r.stop(); } catch (_) {}
     }, silenceTimeoutMs);
   };
@@ -70,15 +72,36 @@ export function useSpeechRecognition({
     };
 
     r.onerror = (event) => {
-      setError(event.error || 'unknown');
-      setListening(false);
-      clearSilenceTimer();
+      const err = event.error || 'unknown';
+      setError(err);
+      // 회복 불가능한 에러는 사용자 중단으로 처리
+      if (err === 'not-allowed' || err === 'service-not-allowed' || err === 'audio-capture') {
+        userStoppedRef.current = true;
+        setListening(false);
+        clearSilenceTimer();
+      }
+      // 그 외('no-speech', 'aborted', 'network' 등)는 onend의 재시작 로직에 위임
     };
 
     r.onend = () => {
-      setListening(false);
       setInterim('');
       clearSilenceTimer();
+      // 사용자가 명시적으로 멈추지 않았다면, 브라우저(삼성 등)가 임의로 끊은 것이므로 재시작
+      if (!userStoppedRef.current) {
+        setTimeout(() => {
+          if (userStoppedRef.current) return;
+          const cur = recognitionRef.current;
+          if (!cur) return;
+          try {
+            cur.start();
+            armSilenceTimer();
+          } catch (_) {
+            setListening(false);
+          }
+        }, 100);
+        return;
+      }
+      setListening(false);
     };
 
     recognitionRef.current = r;
@@ -97,6 +120,7 @@ export function useSpeechRecognition({
     setTranscript('');
     setInterim('');
     setError(null);
+    userStoppedRef.current = false;
     try {
       r.start();
       setListening(true);
@@ -110,6 +134,7 @@ export function useSpeechRecognition({
   const stop = useCallback(() => {
     const r = recognitionRef.current;
     if (!r) return;
+    userStoppedRef.current = true;
     clearSilenceTimer();
     try { r.stop(); } catch (_) {}
   }, []);
