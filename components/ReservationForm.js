@@ -48,6 +48,7 @@ const Modal = styled.div`
   flex-direction: column;
   overflow: hidden;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  min-width: 0;
 
   @media (max-width: 768px) {
     width: 100%;
@@ -91,8 +92,10 @@ const CloseBtn = styled.button`
 const Body = styled.div`
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 20px;
   -webkit-overflow-scrolling: touch;
+  min-width: 0;
 
   @media (max-width: 480px) {
     padding: 16px;
@@ -240,6 +243,7 @@ const WizardCard = styled.div`
   padding: 20px;
   margin-top: 4px;
   animation: ${slideIn} 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  min-width: 0;
 
   @media (max-width: 480px) {
     padding: 16px;
@@ -333,6 +337,7 @@ const FieldGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+  min-width: 0;
 
   @media (max-width: 600px) {
     grid-template-columns: 1fr;
@@ -344,6 +349,7 @@ const Field = styled.div`
   flex-direction: column;
   gap: 6px;
   position: relative;
+  min-width: 0;
 `;
 
 const Label = styled.label`
@@ -695,7 +701,7 @@ export default function ReservationForm({
 }) {
   const isEdit = !!(initial && initial._id);
   const showToast = useToast();
-  const speech = useSpeechRecognition({ lang: 'ko-KR', continuous: true, interimResults: true });
+  const speech = useSpeechRecognition({ lang: 'ko-KR', continuous: true, interimResults: true, silenceTimeoutMs: 3000 });
 
   const [form, setForm] = useState(emptyForm(defaultDate));
   const [filled, setFilled] = useState({});
