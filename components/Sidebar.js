@@ -170,6 +170,7 @@ const menuSections = [
       { label: '실시간 주문', key: 'orders', href: '/orders' },
       { label: '호출내역', key: 'call-history', href: '/call-history' },
       { label: '테이블 현황', key: 'tables', href: '/tables' },
+      { label: '예약 관리', key: 'reservations', href: '/reservations' },
     ],
   },
   {
