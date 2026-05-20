@@ -6,11 +6,13 @@ import Header from '../components/Header';
 import ReservationForm from '../components/ReservationForm';
 import ReservationList from '../components/ReservationList';
 import ReservationStats from '../components/ReservationStats';
+import ReservationCalendar from '../components/ReservationCalendar';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/Toast';
 import { simpleViewAtom } from '../store/atoms';
 import {
   useReservations,
+  useReservationsByMonth,
   useCreateReservation,
   useUpdateReservation,
   useDeleteReservation,
@@ -41,8 +43,39 @@ const Content = styled.div`
 
 const ActionRow = styled.div`
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 14px;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
+const ViewToggle = styled.div`
+  display: inline-flex;
+  border: 1px solid #e5e8eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+`;
+
+const ViewBtn = styled.button`
+  padding: 8px 16px;
+  border: none;
+  background: ${(p) => (p.$active ? '#3182F6' : 'white')};
+  color: ${(p) => (p.$active ? 'white' : '#333')};
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+
+  & + & {
+    border-left: 1px solid #e5e8eb;
+  }
+
+  &:hover:not(:disabled) {
+    background: ${(p) => (p.$active ? '#3182F6' : '#f8f9fa')};
+  }
 `;
 
 const PrimaryBtn = styled.button`
@@ -344,14 +377,48 @@ export default function Reservations() {
   const { isLoading: authLoading } = useAuth({ redirectIfUnauthenticated: true });
   const showToast = useToast();
   const simpleView = useAtomValue(simpleViewAtom);
+  const [viewMode, setViewMode] = useState('list');
   const [selectedDate, setSelectedDate] = useState(todayYmd());
+  const [calMonth, setCalMonth] = useState(() => {
+    const d = new Date();
+    return { year: d.getFullYear(), month: d.getMonth() + 1 };
+  });
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [defaultTime, setDefaultTime] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const dateInputRef = useRef(null);
 
-  const { data: reservations, isLoading } = useReservations({ date: selectedDate });
+  const { data: reservations, isLoading } = useReservations(
+    { date: selectedDate },
+    { enabled: viewMode === 'list' },
+  );
+  const { data: monthly, isLoading: monthlyLoading } = useReservationsByMonth(
+    calMonth.year,
+    calMonth.month,
+    { enabled: viewMode === 'calendar' },
+  );
+
+  const goPrevMonth = () => {
+    setCalMonth((c) => {
+      const m = c.month - 1;
+      return m < 1 ? { year: c.year - 1, month: 12 } : { year: c.year, month: m };
+    });
+  };
+  const goNextMonth = () => {
+    setCalMonth((c) => {
+      const m = c.month + 1;
+      return m > 12 ? { year: c.year + 1, month: 1 } : { year: c.year, month: m };
+    });
+  };
+  const goCalToday = () => {
+    const d = new Date();
+    setCalMonth({ year: d.getFullYear(), month: d.getMonth() + 1 });
+  };
+  const handleCalDayClick = (dateKey) => {
+    setSelectedDate(dateKey);
+    setViewMode('list');
+  };
   const createMutation = useCreateReservation();
   const updateMutation = useUpdateReservation();
   const deleteMutation = useDeleteReservation();
@@ -444,9 +511,33 @@ export default function Reservations() {
         <Content>
           <Header title="예약 관리" />
           <ActionRow>
+            <ViewToggle>
+              <ViewBtn $active={viewMode === 'list'} onClick={() => setViewMode('list')}>
+                리스트
+              </ViewBtn>
+              <ViewBtn $active={viewMode === 'calendar'} onClick={() => setViewMode('calendar')}>
+                달력
+              </ViewBtn>
+            </ViewToggle>
             <PrimaryBtn onClick={handleOpenNew}>+ 새 예약</PrimaryBtn>
           </ActionRow>
 
+          {viewMode === 'calendar' && (
+            <ReservationCalendar
+              year={calMonth.year}
+              month={calMonth.month}
+              data={monthly}
+              todayKey={todayYmd()}
+              loading={monthlyLoading}
+              onPrev={goPrevMonth}
+              onNext={goNextMonth}
+              onToday={goCalToday}
+              onDayClick={handleCalDayClick}
+            />
+          )}
+
+          {viewMode === 'list' && (
+          <>
           <DateCard>
             <NavBtn
               onClick={() => setSelectedDate(shiftDate(selectedDate, -1))}
@@ -512,6 +603,8 @@ export default function Reservations() {
             loading={isLoading}
             onReservationClick={handleEdit}
           />
+          </>
+          )}
         </Content>
       </MainArea>
 

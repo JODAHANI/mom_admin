@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api';
 
-export function useReservations({ date, startDate, endDate } = {}) {
+export function useReservations({ date, startDate, endDate } = {}, options = {}) {
   return useQuery({
     queryKey: ['reservations', { date, startDate, endDate }],
     queryFn: async () => {
@@ -12,10 +12,11 @@ export function useReservations({ date, startDate, endDate } = {}) {
       const { data } = await api.get('/reservations', { params });
       return data;
     },
+    ...options,
   });
 }
 
-export function useReservationsByMonth(year, month) {
+export function useReservationsByMonth(year, month, options = {}) {
   return useQuery({
     queryKey: ['reservations', 'by-month', year, month],
     queryFn: async () => {
@@ -24,7 +25,8 @@ export function useReservationsByMonth(year, month) {
       });
       return data;
     },
-    enabled: !!year && !!month,
+    enabled: !!year && !!month && options.enabled !== false,
+    ...options,
   });
 }
 
