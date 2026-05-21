@@ -4,35 +4,35 @@ import api from '../lib/api';
 
 export function useAuth({ redirectIfUnauthenticated = true } = {}) {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState('pending');
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (token) {
-      setIsAuthenticated(true);
-      setLoading(false);
+      setStatus('authenticated');
+    } else if (redirectIfUnauthenticated) {
+      router.replace('/login');
     } else {
-      setIsAuthenticated(false);
-      setLoading(false);
-      if (redirectIfUnauthenticated) {
-        router.push('/login');
-      }
+      setStatus('unauthenticated');
     }
   }, [redirectIfUnauthenticated, router]);
 
   const login = async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password });
     localStorage.setItem('token', data.token);
-    setIsAuthenticated(true);
+    setStatus('authenticated');
     return data;
   };
 
   const logout = () => {
     localStorage.removeItem('token');
-    setIsAuthenticated(false);
-    router.push('/login');
+    setStatus('unauthenticated');
+    router.replace('/login');
   };
 
-  return { login, logout, isAuthenticated, loading };
+  const isAuthenticated = status === 'authenticated';
+  const loading =
+    status === 'pending' || (redirectIfUnauthenticated && status !== 'authenticated');
+
+  return { login, logout, isAuthenticated, loading, isLoading: loading };
 }

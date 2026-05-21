@@ -7,9 +7,9 @@ export default function IndexPage() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      router.push('/products');
+      router.replace('/products');
     } else {
-      router.push('/login');
+      router.replace('/login');
     }
   }, [router]);
 
