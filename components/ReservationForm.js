@@ -790,12 +790,15 @@ export default function ReservationForm({
     const { fields, filled: filledMap } = parseReservationVoice(speech.transcript, {
       baseDate: new Date(),
     });
+    // notes는 음성으로 채우지 않음 — 항상 수기 입력
+    const { notes: _n, ...voiceFields } = fields;
+    const { notes: _nf, ...voiceFilled } = filledMap;
     setForm((prev) => ({
       ...prev,
-      ...fields,
-      items: fields.items || prev.items,
+      ...voiceFields,
+      items: voiceFields.items || prev.items,
     }));
-    setFilled((prev) => ({ ...prev, ...filledMap }));
+    setFilled((prev) => ({ ...prev, ...voiceFilled }));
     setCompleted({});
     setCurrentField(null);
     setPhase('fill');
