@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { useProducts } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
 import { useCreateOrder } from '../hooks/useOrders';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { useToast } from './Toast';
 
 const Overlay = styled.div`
@@ -39,34 +40,43 @@ const Modal = styled.div`
 
   @media (max-width: 768px) {
     width: 100%;
-    height: 100vh;
-    max-height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
     border-radius: 0;
   }
 `;
 
 const Header = styled.div`
   background: white;
-  padding: 16px 20px;
+  padding: 14px 18px;
   border-bottom: 1px solid #e5e8eb;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex: 0 0 auto;
+
+  @media (max-width: 768px) {
+    padding: 10px 12px;
+  }
 `;
 
 const Title = styled.h3`
   font-size: 17px;
   font-weight: 700;
   color: #191f28;
+
+  @media (max-width: 768px) {
+    font-size: 14.5px;
+  }
 `;
 
 const CloseBtn = styled.button`
-  font-size: 36px;
+  font-size: 30px;
   color: #8b95a1;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 4px 12px;
+  padding: 4px 10px;
   line-height: 1;
 
   &:hover {
@@ -105,18 +115,30 @@ const Controls = styled.div`
   border-bottom: 1px solid #e5e8eb;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+  flex: 0 0 auto;
+
+  @media (max-width: 768px) {
+    padding: 8px 10px;
+    gap: 6px;
+  }
 `;
 
 const SearchInput = styled.input`
-  padding: 9px 12px;
+  padding: 10px 12px;
   border: 1px solid #e5e8eb;
   border-radius: 8px;
   font-size: 14px;
   outline: none;
+  -webkit-appearance: none;
 
   &:focus {
     border-color: #3182f6;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 16px; /* iOS 자동 줌 방지 */
+    padding: 9px 12px;
   }
 `;
 
@@ -126,18 +148,20 @@ const Tabs = styled.div`
   overflow-x: auto;
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
+  -webkit-overflow-scrolling: touch;
 `;
 
 const Tab = styled.button`
-  padding: 6px 14px;
+  padding: 6px 12px;
   border: 1px solid ${(p) => (p.$active ? '#3182F6' : '#e5e8eb')};
   border-radius: 999px;
   background: ${(p) => (p.$active ? '#3182F6' : 'white')};
   color: ${(p) => (p.$active ? 'white' : '#333')};
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
+  flex: 0 0 auto;
 
   &:hover {
     border-color: #3182f6;
@@ -147,11 +171,12 @@ const Tab = styled.button`
 const Grid = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 14px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 12px;
   align-content: start;
+  -webkit-overflow-scrolling: touch;
 
   @media (min-width: 1024px) {
     padding: 18px;
@@ -165,17 +190,18 @@ const Grid = styled.div`
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   }
 
-  @media (max-width: 480px) {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 10px;
+  @media (max-width: 768px) {
+    padding: 10px;
+    gap: 8px;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
   }
 `;
 
 const ProductCard = styled.button`
   position: relative;
   background: white;
-  border: 1px solid #e5e8eb;
-  border-radius: 12px;
+  border: 1px solid ${(p) => (p.$inCart ? '#3182F6' : '#e5e8eb')};
+  border-radius: 10px;
   padding: 0;
   overflow: hidden;
   min-height: 92px;
@@ -183,9 +209,15 @@ const ProductCard = styled.button`
   opacity: ${(p) => (p.$disabled ? 0.5 : 1)};
   text-align: left;
   transition: transform 0.1s, box-shadow 0.1s, border-color 0.1s;
+  box-shadow: ${(p) => (p.$inCart ? '0 0 0 1px #3182F6 inset' : 'none')};
 
   @media (min-width: 1024px) {
     min-height: 104px;
+  }
+
+  @media (max-width: 768px) {
+    min-height: 76px;
+    border-radius: 9px;
   }
 
   &:hover {
@@ -193,40 +225,75 @@ const ProductCard = styled.button`
   }
 
   &:active {
-    ${(p) => !p.$disabled && 'transform: translateY(0);'}
+    ${(p) => !p.$disabled && 'transform: scale(0.97);'}
   }
 `;
 
 const SoldOutOverlay = styled.div`
   position: absolute;
-  top: 8px;
-  left: 8px;
-  padding: 3px 8px;
-  border-radius: 6px;
+  top: 6px;
+  left: 6px;
+  padding: 2px 7px;
+  border-radius: 5px;
   background: rgba(244, 67, 54, 0.95);
   color: white;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
+  z-index: 2;
+`;
+
+const QtyBadge = styled.div`
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #3182f6;
+  color: white;
+  font-size: 11.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(49, 130, 246, 0.35);
+  z-index: 2;
+  font-variant-numeric: tabular-nums;
 `;
 
 const ProductInfo = styled.div`
   width: 100%;
   height: 100%;
-  padding: 14px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
+
+  @media (max-width: 768px) {
+    padding: 8px 9px;
+    gap: 3px;
+  }
 `;
 
 const ProductName = styled.div`
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
   color: #191f28;
   line-height: 1.3;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+
+  @media (min-width: 1024px) {
+    font-size: 17px;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 12.5px;
+    line-height: 1.25;
+  }
 `;
 
 const ProductPrice = styled.div`
@@ -234,6 +301,11 @@ const ProductPrice = styled.div`
   font-weight: 700;
   color: #3182f6;
   font-variant-numeric: tabular-nums;
+  margin-top: auto;
+
+  @media (max-width: 768px) {
+    font-size: 12px;
+  }
 `;
 
 const CartPane = styled.div`
@@ -254,19 +326,25 @@ const CartPane = styled.div`
   @media (max-width: 768px) {
     width: 100%;
     flex: 0 0 auto;
-    min-height: 220px;
-    max-height: 45vh;
+    max-height: 42vh;
   }
 `;
 
 const CartHeader = styled.div`
-  padding: 14px 16px;
+  padding: 12px 16px;
   border-bottom: 1px solid #e5e8eb;
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 700;
   color: #191f28;
   display: flex;
   justify-content: space-between;
+  flex: 0 0 auto;
+
+  @media (max-width: 768px) {
+    padding: 8px 14px;
+    font-size: 13px;
+    ${(p) => p.$hideEmpty && 'display: none;'}
+  }
 `;
 
 const CartCount = styled.span`
@@ -278,18 +356,25 @@ const CartCount = styled.span`
 const CartList = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 8px 0;
+  padding: 4px 0;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
 `;
 
 const CartEmpty = styled.div`
   text-align: center;
-  padding: 40px 20px;
+  padding: 30px 20px;
   color: #8b95a1;
   font-size: 13px;
+
+  @media (max-width: 768px) {
+    padding: 14px 16px;
+    font-size: 12px;
+  }
 `;
 
 const CartItem = styled.div`
-  padding: 14px 16px;
+  padding: 12px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -297,6 +382,11 @@ const CartItem = styled.div`
 
   & + & {
     border-top: 1px solid #f2f3f5;
+  }
+
+  @media (max-width: 768px) {
+    padding: 8px 12px;
+    gap: 8px;
   }
 `;
 
@@ -306,37 +396,43 @@ const CartInfo = styled.div`
 `;
 
 const CartName = styled.div`
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 13.5px;
+  font-weight: 700;
   color: #191f28;
   margin-bottom: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+
+  @media (max-width: 768px) {
+    font-size: 13px;
+  }
 `;
 
 const CartPrice = styled.div`
-  font-size: 12px;
-  color: #8b95a1;
+  font-size: 12.5px;
+  color: #4e5968;
   font-variant-numeric: tabular-nums;
+  font-weight: 600;
 `;
 
 const QtyBox = styled.div`
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   background: #f5f6f8;
-  border-radius: 12px;
-  padding: 4px;
+  border-radius: 10px;
+  padding: 3px;
+  flex: 0 0 auto;
 `;
 
 const QtyBtn = styled.button`
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
   background: white;
   border: none;
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
   color: #191f28;
   cursor: pointer;
@@ -351,7 +447,7 @@ const QtyBtn = styled.button`
   }
 
   &:active {
-    transform: scale(0.94);
+    transform: scale(0.92);
   }
 
   &:disabled {
@@ -360,23 +456,42 @@ const QtyBtn = styled.button`
     background: white;
     color: #191f28;
   }
+
+  @media (min-width: 1024px) {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  @media (max-width: 768px) {
+    width: 32px;
+    height: 32px;
+    font-size: 17px;
+  }
 `;
 
 const QtyNum = styled.div`
-  min-width: 32px;
+  min-width: 24px;
   text-align: center;
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 800;
   color: #191f28;
   font-variant-numeric: tabular-nums;
 `;
 
 const CartFooter = styled.div`
   border-top: 1px solid #e5e8eb;
-  padding: 14px 16px;
+  padding: 12px 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+  flex: 0 0 auto;
+  background: white;
+
+  @media (max-width: 768px) {
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+    gap: 8px;
+  }
 `;
 
 const TotalRow = styled.div`
@@ -386,7 +501,7 @@ const TotalRow = styled.div`
 `;
 
 const TotalLabel = styled.div`
-  font-size: 14px;
+  font-size: 13.5px;
   color: #191f28;
   font-weight: 600;
 `;
@@ -396,16 +511,20 @@ const TotalValue = styled.div`
   font-weight: 800;
   color: #3182f6;
   font-variant-numeric: tabular-nums;
+
+  @media (max-width: 768px) {
+    font-size: 19px;
+  }
 `;
 
 const SubmitBtn = styled.button`
-  padding: 14px;
+  padding: 13px;
   border: none;
   border-radius: 10px;
   background: #3182f6;
   color: white;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
 
   &:hover {
@@ -415,6 +534,11 @@ const SubmitBtn = styled.button`
   &:disabled {
     background: #c6cdd6;
     cursor: not-allowed;
+  }
+
+  @media (max-width: 768px) {
+    padding: 13px;
+    font-size: 15px;
   }
 `;
 
@@ -448,7 +572,7 @@ const VariantModal = styled.div`
 `;
 
 const VariantHeader = styled.div`
-  padding: 18px 20px;
+  padding: 16px 18px;
   border-bottom: 1px solid #e5e8eb;
   display: flex;
   justify-content: space-between;
@@ -478,15 +602,20 @@ const VariantChoice = styled.button`
   border-radius: 10px;
   background: white;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   color: #191f28;
   cursor: pointer;
   opacity: ${(p) => (p.$soldOut ? 0.5 : 1)};
   pointer-events: ${(p) => (p.$soldOut ? 'none' : 'auto')};
+  touch-action: manipulation;
 
   &:hover {
     background: #f5f9ff;
     border-color: #c6d4ef;
+  }
+
+  &:active {
+    transform: scale(0.98);
   }
 `;
 
@@ -497,6 +626,7 @@ const VariantPrice = styled.span`
 `;
 
 export default function OrderCreateModal({ table, onClose }) {
+  useBodyScrollLock();
   const showToast = useToast();
   const { data: products = [], isLoading: productsLoading } = useProducts();
   const { data: categories = [] } = useCategories();
@@ -527,9 +657,16 @@ export default function OrderCreateModal({ table, onClose }) {
     });
   }, [products, categoryId, search]);
 
+  const productCountMap = useMemo(() => {
+    const map = new Map();
+    for (const i of cart) {
+      map.set(i.productId, (map.get(i.productId) || 0) + i.quantity);
+    }
+    return map;
+  }, [cart]);
+
   const addToCart = (product) => {
     if (product.isSoldOut) return;
-    // 변형이 있는 상품은 시트로 종류를 먼저 선택받음
     if (Array.isArray(product.variants) && product.variants.length > 0) {
       setVariantPicker(product);
       return;
@@ -563,12 +700,11 @@ export default function OrderCreateModal({ table, onClose }) {
   };
 
   const changeQty = (line, delta) => {
-    setCart((prev) => {
-      const next = prev
+    setCart((prev) =>
+      prev
         .map((i) => (sameLine(i, line) ? { ...i, quantity: i.quantity + delta } : i))
-        .filter((i) => i.quantity > 0);
-      return next;
-    });
+        .filter((i) => i.quantity > 0)
+    );
   };
 
   const total = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
@@ -612,7 +748,7 @@ export default function OrderCreateModal({ table, onClose }) {
       <Modal onClick={(e) => e.stopPropagation()}>
         <Header>
           <Title>
-            {table.floor}층 {table.number}번 테이블 · 주문 추가
+            {table.floor}층 {table.number}번 · 주문 추가
           </Title>
           <CloseBtn onClick={onClose}>&times;</CloseBtn>
         </Header>
@@ -649,27 +785,33 @@ export default function OrderCreateModal({ table, onClose }) {
               ) : filtered.length === 0 ? (
                 <EmptyGrid>메뉴가 없습니다</EmptyGrid>
               ) : (
-                filtered.map((p) => (
-                  <ProductCard
-                    key={p._id}
-                    $disabled={p.isSoldOut}
-                    disabled={p.isSoldOut}
-                    onClick={() => addToCart(p)}
-                  >
-                    {p.isSoldOut && <SoldOutOverlay>품절</SoldOutOverlay>}
-                    <ProductInfo>
-                      <ProductName>{p.name}</ProductName>
-                      <ProductPrice>
-                        {Number(p.price || 0).toLocaleString()}원
-                      </ProductPrice>
-                    </ProductInfo>
-                  </ProductCard>
-                ))
+                filtered.map((p) => {
+                  const count = productCountMap.get(p._id) || 0;
+                  return (
+                    <ProductCard
+                      key={p._id}
+                      $disabled={p.isSoldOut}
+                      $inCart={count > 0}
+                      disabled={p.isSoldOut}
+                      onClick={() => addToCart(p)}
+                    >
+                      {p.isSoldOut && <SoldOutOverlay>품절</SoldOutOverlay>}
+                      {count > 0 && <QtyBadge>{count}</QtyBadge>}
+                      <ProductInfo>
+                        <ProductName>{p.name}</ProductName>
+                        <ProductPrice>
+                          {Number(p.price || 0).toLocaleString()}원
+                        </ProductPrice>
+                      </ProductInfo>
+                    </ProductCard>
+                  );
+                })
               )}
             </Grid>
           </LeftPane>
+
           <CartPane>
-            <CartHeader>
+            <CartHeader $hideEmpty={cart.length === 0}>
               <span>장바구니</span>
               <CartCount>{itemCount > 0 ? `${itemCount}개` : ''}</CartCount>
             </CartHeader>
@@ -713,6 +855,7 @@ export default function OrderCreateModal({ table, onClose }) {
           </CartPane>
         </Body>
       </Modal>
+
       {variantPicker && (
         <VariantOverlay onClick={() => setVariantPicker(null)}>
           <VariantModal onClick={(e) => e.stopPropagation()}>

@@ -1229,7 +1229,7 @@ export default function TablesPage() {
                 결제하기
               </ClearBtn>
             ) : (
-              <DeleteBtn onClick={handleDeleteTable}>삭제</DeleteBtn>
+              <DeleteBtn onClick={handleDeleteTable}>테이블 삭제</DeleteBtn>
             );
 
             return (
