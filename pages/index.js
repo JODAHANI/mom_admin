@@ -7,7 +7,7 @@ export default function IndexPage() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      router.replace('/products');
+      router.replace('/tables');
     } else {
       router.replace('/login');
     }

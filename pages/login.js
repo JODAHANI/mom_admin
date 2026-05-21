@@ -139,7 +139,7 @@ export default function LoginPage() {
       }
       await login(email, password);
       showToast('로그인 되었습니다', 'auth', { position: 'center-bottom' });
-      router.push('/products');
+      router.push('/tables');
     } catch (err) {
       setError('아이디 또는 비밀번호가 올바르지 않습니다');
     } finally {
