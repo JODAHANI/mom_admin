@@ -5,9 +5,18 @@
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 3002",
     "build": "next build",
-    "start": "next start -H 0.0.0.0 -p 3002"
+    "start": "next start -H 0.0.0.0 -p 3002",
+    "build:app": "BUILD_TARGET=app next build",
+    "sync:android": "BUILD_TARGET=app next build && npx cap sync android",
+    "open:android": "npx cap open android"
   },
   "dependencies": {
+    "@capacitor/android": "^7.6.5",
+    "@capacitor/app": "^7.1.2",
+    "@capacitor/cli": "^7.6.5",
+    "@capacitor/core": "^7.6.5",
+    "@capacitor/local-notifications": "^7.0.6",
+    "@capacitor/push-notifications": "^7.0.6",
     "@tanstack/react-query": "^5.90.21",
     "axios": "^1.13.6",
     "jotai": "^2.18.1",

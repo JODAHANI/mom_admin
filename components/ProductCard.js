@@ -133,7 +133,7 @@ export default function ProductCard({ product, onMoveUp, onMoveDown, isFirst, is
   const toggleSoldOut = useToggleSoldOut();
 
   const handleCardClick = () => {
-    router.push(`/products/${product._id || product.id}`);
+    router.push(`/products/edit?id=${product._id || product.id}`);
   };
 
   return (
