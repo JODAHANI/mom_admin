@@ -393,11 +393,24 @@ export default function Reservations() {
     { date: selectedDate },
     { enabled: viewMode === 'list' },
   );
+  const { data: allReservations, isLoading: allLoading } = useReservations(
+    {},
+    { enabled: viewMode === 'all' },
+  );
   const { data: monthly, isLoading: monthlyLoading } = useReservationsByMonth(
     calMonth.year,
     calMonth.month,
     { enabled: viewMode === 'calendar' },
   );
+
+  const sortedAllReservations = useMemo(() => {
+    if (!allReservations) return allReservations;
+    return [...allReservations].sort((a, b) => {
+      const aTime = new Date(a.createdAt).getTime();
+      const bTime = new Date(b.createdAt).getTime();
+      return aTime - bTime;
+    });
+  }, [allReservations]);
 
   const goPrevMonth = () => {
     setCalMonth((c) => {
@@ -512,8 +525,11 @@ export default function Reservations() {
           <Header title="예약 관리" />
           <ActionRow>
             <ViewToggle>
+              <ViewBtn $active={viewMode === 'all'} onClick={() => setViewMode('all')}>
+                전체
+              </ViewBtn>
               <ViewBtn $active={viewMode === 'list'} onClick={() => setViewMode('list')}>
-                리스트
+                일정
               </ViewBtn>
               <ViewBtn $active={viewMode === 'calendar'} onClick={() => setViewMode('calendar')}>
                 달력
@@ -521,6 +537,15 @@ export default function Reservations() {
             </ViewToggle>
             <PrimaryBtn onClick={handleOpenNew}>+ 새 예약</PrimaryBtn>
           </ActionRow>
+
+          {viewMode === 'all' && (
+            <ReservationList
+              reservations={sortedAllReservations}
+              loading={allLoading}
+              onReservationClick={handleEdit}
+              showDate
+            />
+          )}
 
           {viewMode === 'calendar' && (
             <ReservationCalendar

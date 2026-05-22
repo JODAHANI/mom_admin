@@ -76,6 +76,30 @@ const TimeMissing = styled(TimeCol)`
   font-weight: 600;
 `;
 
+const DateLabel = styled.div`
+  font-size: 13px;
+  font-weight: 700;
+  color: #4B5563;
+  line-height: 1.2;
+  margin-bottom: 4px;
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+  }
+`;
+
+const DateWeekday = styled.span`
+  color: ${(p) => (p.$sun ? '#F44336' : p.$sat ? '#3182F6' : '#8B95A1')};
+  font-weight: 600;
+  margin-left: 2px;
+`;
+
+const TimeColStack = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+`;
+
 const Body = styled.div`
   display: flex;
   flex-direction: column;
@@ -153,15 +177,45 @@ const NotesIcon = styled.span`
   flex-shrink: 0;
 `;
 
-function ReservationCard({ reservation, onClick, showTime = true }) {
+const WEEKDAYS_SHORT = ['일', '월', '화', '수', '목', '금', '토'];
+
+function formatShortDate(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return null;
+  return {
+    text: `${d.getMonth() + 1}/${d.getDate()}`,
+    weekday: WEEKDAYS_SHORT[d.getDay()],
+    wIdx: d.getDay(),
+  };
+}
+
+function ReservationCard({ reservation, onClick, showTime = true, showDate = false }) {
   const r = reservation;
   const adults = r.adults || 0;
   const children = r.children || 0;
   const totalPeople = adults + children;
+  const dateChip = showDate ? formatShortDate(r.reservationDate) : null;
 
   return (
     <Card onClick={onClick}>
-      {showTime ? (
+      {showDate ? (
+        <TimeColStack>
+          {dateChip && (
+            <DateLabel>
+              {dateChip.text}
+              <DateWeekday $sun={dateChip.wIdx === 0} $sat={dateChip.wIdx === 6}>
+                {dateChip.weekday}
+              </DateWeekday>
+            </DateLabel>
+          )}
+          {r.reservationTime ? (
+            <TimeCol>{r.reservationTime}</TimeCol>
+          ) : (
+            <TimeMissing>시간<br />미정</TimeMissing>
+          )}
+        </TimeColStack>
+      ) : showTime ? (
         r.reservationTime ? (
           <TimeCol>{r.reservationTime}</TimeCol>
         ) : (
@@ -204,8 +258,9 @@ function ReservationCard({ reservation, onClick, showTime = true }) {
   );
 }
 
-export default function ReservationList({ reservations, onReservationClick, loading }) {
+export default function ReservationList({ reservations, onReservationClick, loading, showDate = false }) {
   const { timed, untimed } = useMemo(() => {
+    if (showDate) return { timed: [], untimed: [] };
     const list = reservations || [];
     const timedList = list
       .filter((r) => !!r.reservationTime)
@@ -217,14 +272,31 @@ export default function ReservationList({ reservations, onReservationClick, load
       });
     const untimedList = list.filter((r) => !r.reservationTime);
     return { timed: timedList, untimed: untimedList };
-  }, [reservations]);
+  }, [reservations, showDate]);
 
   if (loading) {
     return <Empty>불러오는 중…</Empty>;
   }
 
   if (!reservations || reservations.length === 0) {
-    return <Empty>이 날짜에 예약이 없습니다</Empty>;
+    return <Empty>{showDate ? '예약이 없습니다' : '이 날짜에 예약이 없습니다'}</Empty>;
+  }
+
+  if (showDate) {
+    return (
+      <Wrapper>
+        <Section>
+          {reservations.map((r) => (
+            <ReservationCard
+              key={r._id}
+              reservation={r}
+              showDate
+              onClick={() => onReservationClick(r)}
+            />
+          ))}
+        </Section>
+      </Wrapper>
+    );
   }
 
   return (
