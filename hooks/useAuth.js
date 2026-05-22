@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import api from '../lib/api';
+import { maybeRegisterToken, unregisterToken } from '../lib/push';
 
 export function useAuth({ redirectIfUnauthenticated = true } = {}) {
   const router = useRouter();
@@ -21,10 +22,12 @@ export function useAuth({ redirectIfUnauthenticated = true } = {}) {
     const { data } = await api.post('/auth/login', { email, password });
     localStorage.setItem('token', data.token);
     setStatus('authenticated');
+    maybeRegisterToken().catch(() => {});
     return data;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await unregisterToken().catch(() => {});
     localStorage.removeItem('token');
     setStatus('unauthenticated');
     router.replace('/login');

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "329078520851",
+    "project_id": "mom-store-admin",
+    "storage_bucket": "mom-store-admin.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:329078520851:android:538aadbc88fca2791493e6",
+        "android_client_info": {
+          "package_name": "kr.momstore.admin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAl8fOki2urNOWR0w_fF0AlhU2uiSgkWXM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

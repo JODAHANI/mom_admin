@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createGlobalStyle } from 'styled-components';
 import { useAtomValue } from 'jotai';
 import { useWebSocketOrders } from '../hooks/useOrders';
 import { ToastProvider, useToast } from '../components/Toast';
 import { sidebarCollapsedAtom } from '../store/atoms';
+import { initPush } from '../lib/push';
 
 const GlobalStyle = createGlobalStyle`
   :root {
@@ -93,6 +95,14 @@ function ThemedGlobalStyle() {
   return <GlobalStyle $collapsed={collapsed} />;
 }
 
+function PushInitializer() {
+  const router = useRouter();
+  useEffect(() => {
+    initPush(router);
+  }, [router]);
+  return null;
+}
+
 export default function App({ Component, pageProps }) {
   const [queryClient] = useState(
     () =>
@@ -114,6 +124,7 @@ export default function App({ Component, pageProps }) {
       <ThemedGlobalStyle />
       <KakaoBrowserGuard />
       <ToastProvider>
+        <PushInitializer />
         <WebSocketProvider>
           <Component {...pageProps} />
         </WebSocketProvider>

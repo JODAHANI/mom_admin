@@ -1,0 +1,12 @@
+{
+  "appId": "kr.momstore.admin",
+  "appName": "장유해신탕",
+  "webDir": "out",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}
