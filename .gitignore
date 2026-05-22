@@ -8,3 +8,7 @@ npm-debug.log*
 out/
 coverage/
 .vercel
+
+# IDE / app 브랜치 산출물 (main 에선 트래킹 안 함)
+.idea/
+android/
