@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import styled from 'styled-components';
+import { useMemo, useRef, useState, useEffect } from 'react';
+import styled, { keyframes, css } from 'styled-components';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -11,11 +11,22 @@ function makeKey(y, m, d) {
   return `${y}-${pad2(m)}-${pad2(d)}`;
 }
 
+const slideInFromRight = keyframes`
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+`;
+
+const slideInFromLeft = keyframes`
+  from { opacity: 0; transform: translateX(-40px); }
+  to   { opacity: 1; transform: translateX(0); }
+`;
+
 const Wrapper = styled.div`
   background: white;
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 20px;
+  touch-action: pan-y;
 
   @media (max-width: 480px) {
     padding: 14px;
@@ -72,10 +83,24 @@ const TodayBtn = styled.button`
   }
 `;
 
+const GridOuter = styled.div`
+  overflow: hidden;
+`;
+
+const DragLayer = styled.div`
+  transform: translateX(${p => p.$dragX}px);
+  transition: ${p => p.$springing
+    ? 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)'
+    : 'none'};
+`;
+
 const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 4px;
+  animation-name: ${p => p.$dir === 'left' ? slideInFromRight : slideInFromLeft};
+  animation-duration: 0.25s;
+  animation-timing-function: ease-out;
 `;
 
 const Weekday = styled.div`
@@ -202,56 +227,129 @@ export default function ReservationCalendar({
     return bestKey;
   }, [byDay]);
 
+  const touchStartX = useRef(null);
+  const touchStartY = useRef(null);
+  const dirRef = useRef('left');
+  const isFirstRender = useRef(true);
+
+  const [dragX, setDragX] = useState(0);
+  const [springing, setSpringing] = useState(false);
+  const [anim, setAnim] = useState({ key: 0, dir: 'left' });
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    setAnim(prev => ({ key: prev.key + 1, dir: dirRef.current }));
+  }, [year, month]);
+
+  const goNext = () => {
+    dirRef.current = 'left';
+    onNext?.();
+  };
+
+  const goPrev = () => {
+    dirRef.current = 'right';
+    onPrev?.();
+  };
+
+  const goToday = () => {
+    const now = new Date();
+    const currentTotal = year * 12 + month;
+    const todayTotal = now.getFullYear() * 12 + now.getMonth() + 1;
+    dirRef.current = todayTotal >= currentTotal ? 'left' : 'right';
+    onToday?.();
+  };
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e) => {
+    if (touchStartX.current === null || loading) return;
+    const dx = e.touches[0].clientX - touchStartX.current;
+    const dy = e.touches[0].clientY - touchStartY.current;
+    if (Math.abs(dy) > Math.abs(dx)) {
+      touchStartX.current = null;
+      setDragX(0);
+      return;
+    }
+    setSpringing(false);
+    setDragX(dx * 0.55);
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartX.current === null || loading) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+
+    if (Math.abs(diff) > 60) {
+      setDragX(0);
+      if (diff > 0) goNext();
+      else goPrev();
+    } else {
+      setSpringing(true);
+      setDragX(0);
+      setTimeout(() => setSpringing(false), 350);
+    }
+    touchStartX.current = null;
+  };
+
   const cells = [];
   for (let i = 0; i < firstDayWeekday; i++) cells.push(null);
   for (let d = 1; d <= lastDate; d++) cells.push(d);
 
   return (
-    <Wrapper>
+    <Wrapper onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
       <Nav>
-        <NavBtn onClick={onPrev} aria-label="이전 달">‹</NavBtn>
+        <NavBtn onClick={goPrev} aria-label="이전 달">‹</NavBtn>
         <MonthLabel>{year}년 {month}월</MonthLabel>
-        <NavBtn onClick={onNext} aria-label="다음 달">›</NavBtn>
-        <TodayBtn onClick={onToday}>오늘</TodayBtn>
+        <NavBtn onClick={goNext} aria-label="다음 달">›</NavBtn>
+        <TodayBtn onClick={goToday}>오늘</TodayBtn>
       </Nav>
 
       {loading ? (
         <Loading>불러오는 중...</Loading>
       ) : (
-        <Grid>
-          {WEEKDAYS.map((w, i) => (
-            <Weekday key={w} $sun={i === 0} $sat={i === 6}>{w}</Weekday>
-          ))}
-          {cells.map((d, idx) => {
-            if (d === null) {
-              return <DayCell key={`empty-${idx}`} $empty disabled />;
-            }
-            const key = makeKey(year, month, d);
-            const info = byDay[key] || { count: 0, people: 0 };
-            const weekday = (firstDayWeekday + d - 1) % 7;
-            const isMax = key === maxKey && info.count > 0;
-            const isToday = key === todayKey;
-            return (
-              <DayCell
-                key={key}
-                $isMax={isMax}
-                onClick={() => onDayClick && onDayClick(key)}
-              >
-                {isToday && <TodayBadge>Today</TodayBadge>}
-                <DayNum
-                  $sun={weekday === 0}
-                  $sat={weekday === 6}
-                  $isMax={isMax}
-                >
-                  {d}
-                </DayNum>
-                {info.count > 0 && (
-                  <CountText $isMax={isMax}>{info.count}건</CountText>
-                )}
-              </DayCell>
-            );
-          })}
-        </Grid>
+        <GridOuter>
+          <DragLayer $dragX={dragX} $springing={springing}>
+            <Grid key={anim.key} $dir={anim.dir}>
+              {WEEKDAYS.map((w, i) => (
+                <Weekday key={w} $sun={i === 0} $sat={i === 6}>{w}</Weekday>
+              ))}
+              {cells.map((d, idx) => {
+                if (d === null) {
+                  return <DayCell key={`empty-${idx}`} $empty disabled />;
+                }
+                const key = makeKey(year, month, d);
+                const info = byDay[key] || { count: 0, people: 0 };
+                const weekday = (firstDayWeekday + d - 1) % 7;
+                const isMax = key === maxKey && info.count > 0;
+                const isToday = key === todayKey;
+                return (
+                  <DayCell
+                    key={key}
+                    $isMax={isMax}
+                    onClick={() => onDayClick && onDayClick(key)}
+                  >
+                    {isToday && <TodayBadge>Today</TodayBadge>}
+                    <DayNum
+                      $sun={weekday === 0}
+                      $sat={weekday === 6}
+                      $isMax={isMax}
+                    >
+                      {d}
+                    </DayNum>
+                    {info.count > 0 && (
+                      <CountText $isMax={isMax}>{info.count}건</CountText>
+                    )}
+                  </DayCell>
+                );
+              })}
+            </Grid>
+          </DragLayer>
+        </GridOuter>
       )}
     </Wrapper>
   );
