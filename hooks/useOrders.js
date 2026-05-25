@@ -54,7 +54,9 @@ export function useUpdateOrderStatus() {
     },
     onMutate: async ({ id, status }) => {
       await queryClient.cancelQueries({ queryKey: ['orders'] });
-      const snapshots = queryClient.getQueriesData({ queryKey: ['orders'] });
+      await queryClient.cancelQueries({ queryKey: ['tables-status'] });
+      const ordersSnapshots = queryClient.getQueriesData({ queryKey: ['orders'] });
+      const tablesSnapshot = queryClient.getQueryData(['tables-status']);
       queryClient.setQueriesData({ queryKey: ['orders'] }, (old) => {
         if (!old) return old;
         const updateOne = (o) => ((o._id === id || o.id === id) ? { ...o, status } : o);
@@ -62,10 +64,19 @@ export function useUpdateOrderStatus() {
         if (Array.isArray(old?.data)) return { ...old, data: old.data.map(updateOne) };
         return old;
       });
-      return { snapshots };
+      if (tablesSnapshot) {
+        const updateOrder = (o) => ((o._id === id || o.id === id) ? { ...o, status } : o);
+        queryClient.setQueryData(['tables-status'], tablesSnapshot.map((table) => ({
+          ...table,
+          allOrders: (table.allOrders || []).map(updateOrder),
+          activeOrders: (table.activeOrders || []).map(updateOrder),
+        })));
+      }
+      return { ordersSnapshots, tablesSnapshot };
     },
     onError: (_err, _vars, ctx) => {
-      ctx?.snapshots?.forEach(([key, data]) => queryClient.setQueryData(key, data));
+      ctx?.ordersSnapshots?.forEach(([key, data]) => queryClient.setQueryData(key, data));
+      if (ctx?.tablesSnapshot) queryClient.setQueryData(['tables-status'], ctx.tablesSnapshot);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });

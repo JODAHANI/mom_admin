@@ -1263,7 +1263,7 @@ export default function TablesPage() {
           {/* 테이블 상세 모달 */}
           {selectedTable && (() => {
             const incomplete = (selectedTable.allOrders || []).filter(o => o.status !== 'served' && o.status !== 'cancelled');
-            const completed = (selectedTable.allOrders || []).filter(o => o.status === 'served');
+            const completed = (selectedTable.allOrders || []).filter(o => o.status === 'served' || o.status === 'cancelled');
             const hasOrders = (selectedTable.allOrders?.length > 0 || selectedTable.activeOrders?.length > 0);
             const footerBtn = hasOrders ? (
               <ClearBtn onClick={handleAskClear} disabled={updateTable.isPending}>
