@@ -1090,17 +1090,12 @@ export default function TablesPage() {
   const handleCancelOrder = () => {
     if (!cancelConfirmOrder) return;
     const orderId = cancelConfirmOrder._id || cancelConfirmOrder.id;
+    setCancelConfirmOrder(null);
+    showToast('주문이 취소되었습니다', 'error');
     updateOrderStatus.mutate(
       { id: orderId, status: 'cancelled' },
       {
-        onSuccess: () => {
-          setCancelConfirmOrder(null);
-          showToast('주문이 취소되었습니다', 'error');
-        },
-        onError: () => {
-          setCancelConfirmOrder(null);
-          showToast('취소에 실패했습니다', 'error');
-        },
+        onError: () => showToast('취소에 실패했습니다', 'error'),
       },
     );
   };
