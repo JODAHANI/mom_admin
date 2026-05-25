@@ -7,6 +7,7 @@ import Header from '../components/Header';
 import OrderCreateModal from '../components/OrderCreateModal';
 import { useToast } from '../components/Toast';
 import { useTables, useUpdateTable, useCreateTable, useDeleteTable, usePrintTableQR } from '../hooks/useTables';
+import { useUpdateOrderStatus } from '../hooks/useOrders';
 import { usePrintSession } from '../hooks/useOrderHistory';
 import { useAuth } from '../hooks/useAuth';
 import { autoPrintOnClearAtom } from '../store/atoms';
@@ -504,14 +505,34 @@ const OrderBadge = styled.span`
 const OrderMenus = styled.div`
   flex: 1;
   min-width: 0;
-  font-size: 14px;
+  font-size: 16px;
   color: #333;
   word-break: break-word;
 `;
 
 const OrderPrice = styled.div`
-  font-size: 13px;
+  font-size: 15px;
   color: #8b95a1;
+  font-weight: 600;
+`;
+
+const OrderCancelBtn = styled.button`
+  padding: 0 24px;
+  border: 1px solid #E5E8EB;
+  border-radius: 8px;
+  background: white;
+  color: #F44336;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  align-self: stretch;
+  transition: all 0.15s;
+
+  &:hover {
+    background: #FFF5F5;
+    border-color: #F44336;
+  }
 `;
 
 const EmptyOrders = styled.div`
@@ -973,6 +994,7 @@ export default function TablesPage() {
   const { loading } = useAuth();
   const { data: tables = [], isLoading } = useTables();
   const updateTable = useUpdateTable();
+  const updateOrderStatus = useUpdateOrderStatus();
   const createTable = useCreateTable();
   const deleteTable = useDeleteTable();
   const printSession = usePrintSession();
@@ -985,6 +1007,7 @@ export default function TablesPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [qrTable, setQrTable] = useState(null);
   const [orderTable, setOrderTable] = useState(null);
+  const [cancelConfirmOrder, setCancelConfirmOrder] = useState(null);
   const [newFloor, setNewFloor] = useState('1');
   const [newNumber, setNewNumber] = useState('');
 
@@ -1062,6 +1085,24 @@ export default function TablesPage() {
         showToast(msg, 'error');
       },
     });
+  };
+
+  const handleCancelOrder = () => {
+    if (!cancelConfirmOrder) return;
+    const orderId = cancelConfirmOrder._id || cancelConfirmOrder.id;
+    updateOrderStatus.mutate(
+      { id: orderId, status: 'cancelled' },
+      {
+        onSuccess: () => {
+          setCancelConfirmOrder(null);
+          showToast('주문이 취소되었습니다', 'error');
+        },
+        onError: () => {
+          setCancelConfirmOrder(null);
+          showToast('취소에 실패했습니다', 'error');
+        },
+      },
+    );
   };
 
   const handleDeleteTable = () => {
@@ -1285,16 +1326,21 @@ export default function TablesPage() {
                         <EmptyOrders>미완료 주문이 없습니다</EmptyOrders>
                       ) : (
                         incomplete.map((order) => (
-                          <OrderItem key={order._id}>
-                            <OrderTop>
-                              <OrderMenus>
+                          <OrderItem key={order._id} style={{ display: 'flex', alignItems: 'stretch' }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ marginBottom: 8 }}>
+                                <OrderBadge $status={order.status}>
+                                  {allStatusLabels[order.status] || order.status}
+                                </OrderBadge>
+                              </div>
+                              <OrderMenus style={{ marginBottom: 4 }}>
                                 {(order.items || []).map((i) => `${i.name} x${i.quantity}`).join(', ')}
                               </OrderMenus>
-                              <OrderBadge $status={order.status}>
-                                {allStatusLabels[order.status] || order.status}
-                              </OrderBadge>
-                            </OrderTop>
-                            <OrderPrice>{Number(order.totalPrice || 0).toLocaleString()}원</OrderPrice>
+                              <OrderPrice>{Number(order.totalPrice || 0).toLocaleString()}원</OrderPrice>
+                            </div>
+                            <OrderCancelBtn onClick={() => setCancelConfirmOrder(order)}>
+                              취소
+                            </OrderCancelBtn>
                           </OrderItem>
                         ))
                       )}
@@ -1305,14 +1351,14 @@ export default function TablesPage() {
                       ) : (
                         completed.map((order) => (
                           <OrderItem key={order._id}>
-                            <OrderTop>
-                              <OrderMenus>
-                                {(order.items || []).map((i) => `${i.name} x${i.quantity}`).join(', ')}
-                              </OrderMenus>
+                            <div style={{ marginBottom: 4 }}>
                               <OrderBadge $status={order.status}>
                                 {allStatusLabels[order.status] || order.status}
                               </OrderBadge>
-                            </OrderTop>
+                            </div>
+                            <OrderMenus style={{ marginBottom: 4 }}>
+                              {(order.items || []).map((i) => `${i.name} x${i.quantity}`).join(', ')}
+                            </OrderMenus>
                             <OrderPrice>{Number(order.totalPrice || 0).toLocaleString()}원</OrderPrice>
                           </OrderItem>
                         ))
@@ -1419,6 +1465,41 @@ export default function TablesPage() {
                     </QrPrintBtn>
                   </QrActions>
                 </QrModalInner>
+              </Modal>
+            </Overlay>
+          )}
+
+          {/* 주문 취소 확인 모달 */}
+          {cancelConfirmOrder && (
+            <Overlay onClick={() => !updateOrderStatus.isPending && setCancelConfirmOrder(null)}>
+              <Modal onClick={(e) => e.stopPropagation()} style={{ width: 400, maxWidth: 'calc(100vw - 32px)' }}>
+                <ModalHeader>
+                  <ModalTitle>주문을 취소할까요?</ModalTitle>
+                  <CloseBtn onClick={() => !updateOrderStatus.isPending && setCancelConfirmOrder(null)}>&times;</CloseBtn>
+                </ModalHeader>
+                <ModalBody>
+                  <ConfirmQuestion>취소된 주문은 복구할 수 없어요</ConfirmQuestion>
+                  <div style={{ background: '#f8f9fa', borderRadius: 10, padding: 14, margin: '12px 0' }}>
+                    <div style={{ fontSize: 14, color: '#333', marginBottom: 4 }}>
+                      {(cancelConfirmOrder.items || []).map((i) => `${i.name} x${i.quantity}`).join(', ')}
+                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#191f28' }}>
+                      {Number(cancelConfirmOrder.totalPrice || 0).toLocaleString()}원
+                    </div>
+                  </div>
+                </ModalBody>
+                <ModalFooter>
+                  <CancelConfirmBtn onClick={() => setCancelConfirmOrder(null)} disabled={updateOrderStatus.isPending}>
+                    돌아가기
+                  </CancelConfirmBtn>
+                  <ClearBtn
+                    onClick={handleCancelOrder}
+                    disabled={updateOrderStatus.isPending}
+                    style={{ background: '#F44336' }}
+                  >
+                    {updateOrderStatus.isPending ? '취소 중...' : '주문 취소'}
+                  </ClearBtn>
+                </ModalFooter>
               </Modal>
             </Overlay>
           )}
