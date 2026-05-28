@@ -701,7 +701,7 @@ export default function ReservationForm({
 }) {
   const isEdit = !!(initial && initial._id);
   const showToast = useToast();
-  const speech = useSpeechRecognition({ lang: 'ko-KR', continuous: true, interimResults: true, silenceTimeoutMs: 3000 });
+  const speech = useSpeechRecognition({ lang: 'ko-KR', continuous: true, interimResults: true, silenceTimeoutMs: 2000 });
 
   const [form, setForm] = useState(emptyForm(defaultDate));
   const [filled, setFilled] = useState({});
@@ -924,7 +924,9 @@ export default function ReservationForm({
                       : '다시 녹음하기'}
                   </VoiceLabel>
                   <VoiceHint>
-                    예: "김영희 내일 오후 6시 장유 2개 010-1234-5678 어른 두 명 아이 한 명"
+                    {speech.listening
+                      ? '다 말씀하셨으면 정지 버튼을 눌러주세요'
+                      : '예: "김영희 내일 오후 6시 장유 2개 010-1234-5678"'}
                   </VoiceHint>
                 </VoiceInfo>
               </VoiceTop>
@@ -1044,7 +1046,7 @@ export default function ReservationForm({
                 <Textarea
                   value={form.notes}
                   onChange={(e) => updateField('notes', e.target.value)}
-                  placeholder="알레르기, 요청사항 등"
+                  placeholder="작성하시지 않으셔도 됩니다."
                 />
               </Section>
             </>
@@ -1148,7 +1150,7 @@ export default function ReservationForm({
                     autoFocus
                     value={form.notes}
                     onChange={(e) => updateField('notes', e.target.value)}
-                    placeholder="고객메모를 입력해주세요."
+                    placeholder="작성하시지 않으셔도 됩니다."
                   />
                 )}
               </WizardBody>
