@@ -199,6 +199,10 @@ const TabsRow = styled.div`
   display: flex;
   gap: 8px;
   margin-bottom: 24px;
+
+  @media (max-width: 600px) {
+    gap: 6px;
+  }
 `;
 
 const Tab = styled.button`
@@ -211,9 +215,18 @@ const Tab = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
+  white-space: nowrap;
 
   &:hover {
     border-color: #3182F6;
+  }
+
+  @media (max-width: 600px) {
+    flex: 1;
+    min-width: 0;
+    padding: 11px 0;
+    font-size: 15px;
+    border-radius: 999px;
   }
 `;
 
